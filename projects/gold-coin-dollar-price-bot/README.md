@@ -75,7 +75,8 @@ Every 10 Minutes ─▶ Get Prices (Alerts) ─▶ Get Active Alerts ─▶ Chec
    | `assetLabel` | String |
    | `target` | Number |
    | `direction` | String |
-   | `createdAt` | String |
+
+   > ستون `createdAt` را دستی نسازید — n8n خودش آن را به‌صورت سیستمی اضافه می‌کند.
 
 5. فایل **[workflow.json](workflow.json)** را در n8n وارد (Import) کنید، کردنشیال‌ها و Data Table را وصل کنید و ورک‌فلو را **Activate** کنید.
 

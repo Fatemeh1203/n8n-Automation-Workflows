@@ -161,7 +161,6 @@ const saveAlert = node({
           assetLabel: expr('{{ $json.assetLabel }}'),
           target: expr('{{ $json.target }}'),
           direction: expr('{{ $json.direction }}'),
-          createdAt: expr('{{ $json.createdAt }}'),
         },
         matchingColumns: [],
         schema: [
@@ -170,7 +169,6 @@ const saveAlert = node({
           { id: 'assetLabel', displayName: 'assetLabel', required: false, defaultMatch: false, display: true, type: 'string', canBeUsedToMatch: false },
           { id: 'target', displayName: 'target', required: false, defaultMatch: false, display: true, type: 'number', canBeUsedToMatch: false },
           { id: 'direction', displayName: 'direction', required: false, defaultMatch: false, display: true, type: 'string', canBeUsedToMatch: false },
-          { id: 'createdAt', displayName: 'createdAt', required: false, defaultMatch: false, display: true, type: 'string', canBeUsedToMatch: false },
         ],
       },
       options: {},

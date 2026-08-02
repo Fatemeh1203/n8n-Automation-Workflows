@@ -209,8 +209,7 @@
             "asset": "={{ $json.asset }}",
             "assetLabel": "={{ $json.assetLabel }}",
             "target": "={{ $json.target }}",
-            "direction": "={{ $json.direction }}",
-            "createdAt": "={{ $json.createdAt }}"
+            "direction": "={{ $json.direction }}"
           },
           "matchingColumns": [],
           "schema": [
@@ -253,15 +252,6 @@
             {
               "id": "direction",
               "displayName": "direction",
-              "required": false,
-              "defaultMatch": false,
-              "display": true,
-              "type": "string",
-              "canBeUsedToMatch": false
-            },
-            {
-              "id": "createdAt",
-              "displayName": "createdAt",
               "required": false,
               "defaultMatch": false,
               "display": true,
@@ -504,7 +494,7 @@
     },
     {
       "parameters": {
-        "content": "## ⚙️ پیش‌نیازها\n1. یک Data Table به نام `price_alerts` با ستون‌های: chatId, asset, assetLabel, target, direction, createdAt\n2. کردنشیال ربات تلگرام\n3. کلید API قیمت (BrsApi یا مشابه) به‌صورت Query Auth با نام `key`",
+        "content": "## ⚙️ پیش‌نیازها\n1. یک Data Table به نام `price_alerts` با ستون‌های: chatId, asset, assetLabel, target, direction\n2. کردنشیال ربات تلگرام\n3. کلید API قیمت (BrsApi یا مشابه) به‌صورت Query Auth با نام `key`",
         "height": 260,
         "width": 420,
         "color": 6
