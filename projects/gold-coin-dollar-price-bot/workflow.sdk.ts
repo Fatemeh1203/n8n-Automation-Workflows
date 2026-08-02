@@ -59,21 +59,39 @@ const routeCommand = switchCase({
   },
 });
 
-const getLivePrices = node({
+// NERKH gold endpoint also carries coins (SEKE_*). Currency is a separate endpoint.
+const getGold = node({
   type: 'n8n-nodes-base.httpRequest',
   version: 4.4,
   config: {
-    name: 'Get Live Prices',
+    name: 'Get Gold Prices',
     parameters: {
       method: 'GET',
-      url: 'https://BrsApi.ir/Api/Market/Gold_Currency.php',
+      url: 'https://api.nerkh.io/v1/prices/json/gold',
       authentication: 'genericCredentialType',
       genericAuthType: 'httpQueryAuth',
       options: { timeout: 15000 },
     },
-    credentials: { httpQueryAuth: newCredential('BrsApi Key') },
+    credentials: { httpQueryAuth: newCredential('Nerkh API Key') },
   },
-  output: [{ gold: [{ name: 'طلای 18 عیار', price: 3500000 }], currency: [{ name: 'دلار', price: 60000 }] }],
+  output: [{ data: { prices: { GOLD18K: { current: '18281100' }, SEKE_EMAMI: { current: '183500000' } } } }],
+});
+
+const getCurrency = node({
+  type: 'n8n-nodes-base.httpRequest',
+  version: 4.4,
+  config: {
+    name: 'Get Currency Prices',
+    parameters: {
+      method: 'GET',
+      url: 'https://api.nerkh.io/v1/prices/json/currency',
+      authentication: 'genericCredentialType',
+      genericAuthType: 'httpQueryAuth',
+      options: { timeout: 15000 },
+    },
+    credentials: { httpQueryAuth: newCredential('Nerkh API Key') },
+  },
+  output: [{ data: { prices: { USD: { current: '191000' }, EUR: { current: '220740' } } } }],
 });
 
 const buildPriceMessage = node({
@@ -85,18 +103,16 @@ const buildPriceMessage = node({
       mode: 'runOnceForAllItems',
       language: 'javaScript',
       jsCode:
-        "const res = $input.first().json;\n" +
-        "const buckets = [];\n" +
-        "if (Array.isArray(res)) { buckets.push(res); } else if (res && typeof res === 'object') { for (const key of Object.keys(res)) { if (Array.isArray(res[key])) buckets.push(res[key]); } }\n" +
-        "const flat = buckets.flat();\n" +
-        "const priceOf = (keywords) => { const row = flat.find((r) => { const name = String(r.name || r.title || r.symbol || ''); return keywords.some((k) => name.includes(k)); }); if (!row) return null; const raw = row.price ?? row.value ?? row.sell ?? row.p; const num = Number(String(raw).replace(/[^\\d.]/g, '')); return Number.isFinite(num) ? num : null; };\n" +
+        "const gold = $('Get Gold Prices').first().json?.data?.prices || {};\n" +
+        "const cur = $('Get Currency Prices').first().json?.data?.prices || {};\n" +
+        "const priceOf = (obj, sym) => { const v = obj?.[sym]?.current; if (v === undefined || v === null) return null; const n = Number(String(v).replace(/[^\\d.]/g, '')); return Number.isFinite(n) ? n : null; };\n" +
         "const fmt = (n) => (n === null ? '—' : n.toLocaleString('fa-IR'));\n" +
-        "const rows = [['🟡 طلای ۱۸ عیار (گرم)', priceOf(['طلای 18','طلای ۱۸','18 عیار','۱۸ عیار'])],['🪙 سکه امامی', priceOf(['امامی','سکه امامی'])],['🪙 نیم سکه', priceOf(['نیم'])],['🪙 ربع سکه', priceOf(['ربع'])],['💵 دلار آمریکا', priceOf(['دلار'])],['💶 یورو', priceOf(['یورو'])]];\n" +
+        "const rows = [['🟡 طلای ۱۸ عیار (گرم)', priceOf(gold,'GOLD18K')],['🟡 طلای ۲۴ عیار (گرم)', priceOf(gold,'GOLD24K')],['🪙 سکه امامی', priceOf(gold,'SEKE_EMAMI')],['🪙 سکه بهار آزادی', priceOf(gold,'SEKE_BAHAR')],['🪙 نیم سکه', priceOf(gold,'SEKE_NIM')],['🪙 ربع سکه', priceOf(gold,'SEKE_ROB')],['💵 دلار آمریکا', priceOf(cur,'USD')],['💶 یورو', priceOf(cur,'EUR')],['💷 پوند', priceOf(cur,'GBP')]];\n" +
         "const now = new Date().toLocaleString('fa-IR', { timeZone: 'Asia/Tehran' });\n" +
-        "let message = '📊 قیمت لحظه‌ای بازار\\n\\n';\n" +
-        "for (const [label, price] of rows) { message += label + ': ' + fmt(price) + ' تومان\\n'; }\n" +
+        "let message = '📊 قیمت لحظه‌ای بازار (تومان)\\n\\n';\n" +
+        "for (const [label, price] of rows) { message += label + ': ' + fmt(price) + '\\n'; }\n" +
         "message += '\\n🕒 به‌روزرسانی: ' + now;\n" +
-        "message += '\\n\\nℹ️ برای ثبت هشدار بنویسید: هشدار سکه 50000000';\n" +
+        "message += '\\n\\nℹ️ برای ثبت هشدار بنویسید: هشدار دلار 200000';\n" +
         "const chatId = $('Telegram Trigger').first().json.message.chat.id;\n" +
         "return [{ json: { message, chatId: String(chatId) } }];",
     },
@@ -135,13 +151,13 @@ const parseAlert = node({
         "const toEn = (s) => s.replace(/[۰-۹]/g, (d) => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d));\n" +
         "const numbers = (text.match(/[\\d۰-۹]{2,}/g) || []).map((s) => Number(toEn(s))).filter((n) => Number.isFinite(n) && n > 0);\n" +
         "const target = numbers.length ? Math.max(...numbers) : 0;\n" +
-        "const assets = [{ key: 'coin_emami', label: 'سکه امامی', kw: ['امامی','سکه'] },{ key: 'gold_18', label: 'طلای ۱۸ عیار', kw: ['طلا','18','۱۸'] },{ key: 'usd', label: 'دلار', kw: ['دلار'] },{ key: 'eur', label: 'یورو', kw: ['یورو'] }];\n" +
-        "const found = assets.find((a) => a.kw.some((k) => text.includes(k))) || assets[0];\n" +
+        "const assets = [{ sym: 'SEKE_NIM', label: 'نیم سکه', kw: ['نیم'] },{ sym: 'SEKE_ROB', label: 'ربع سکه', kw: ['ربع'] },{ sym: 'SEKE_BAHAR', label: 'سکه بهار آزادی', kw: ['بهار'] },{ sym: 'SEKE_EMAMI', label: 'سکه امامی', kw: ['امامی','تمام','سکه'] },{ sym: 'GOLD24K', label: 'طلای ۲۴ عیار', kw: ['24','۲۴'] },{ sym: 'GOLD18K', label: 'طلای ۱۸ عیار', kw: ['طلا','18','۱۸','هجده'] },{ sym: 'EUR', label: 'یورو', kw: ['یورو'] },{ sym: 'GBP', label: 'پوند', kw: ['پوند'] },{ sym: 'USD', label: 'دلار', kw: ['دلار'] }];\n" +
+        "const found = assets.find((a) => a.kw.some((k) => text.includes(k))) || { sym: 'USD', label: 'دلار' };\n" +
         "const direction = text.includes('پایین') || text.includes('کمتر') || text.includes('زیر') ? 'below' : 'above';\n" +
-        "return [{ json: { chatId: String(chatId), asset: found.key, assetLabel: found.label, target, direction, createdAt: new Date().toISOString(), valid: target > 0 } }];",
+        "return [{ json: { chatId: String(chatId), asset: found.sym, assetLabel: found.label, target, direction, valid: target > 0 } }];",
     },
   },
-  output: [{ chatId: '12345', asset: 'coin_emami', assetLabel: 'سکه امامی', target: 50000000, direction: 'above', createdAt: '2026-01-01T00:00:00.000Z', valid: true }],
+  output: [{ chatId: '12345', asset: 'USD', assetLabel: 'دلار', target: 200000, direction: 'above', valid: true }],
 });
 
 const saveAlert = node({
@@ -213,8 +229,8 @@ const sendHelp = node({
         '👋 به ربات قیمت لحظه‌ای طلا، سکه و دلار خوش آمدید.\n\n' +
         '📌 دستورها:\n' +
         '• برای دیدن قیمت‌ها بنویسید: قیمت\n' +
-        '• برای ثبت هشدار بنویسید: هشدار سکه 50000000\n' +
-        '• برای هشدار نزولی بنویسید: هشدار دلار 60000 پایین\n\n' +
+        '• برای ثبت هشدار بنویسید: هشدار سکه 190000000\n' +
+        '• برای هشدار نزولی بنویسید: هشدار دلار 180000 پایین\n\n' +
         'قیمت‌ها لحظه‌ای از بازار دریافت می‌شوند.'
       ),
       additionalFields: { appendAttribution: false },
@@ -234,21 +250,38 @@ const everyTenMinutes = trigger({
   output: [{}],
 });
 
-const getPricesAlerts = node({
+const getGoldAlerts = node({
   type: 'n8n-nodes-base.httpRequest',
   version: 4.4,
   config: {
-    name: 'Get Prices (Alerts)',
+    name: 'Get Gold Prices (Alerts)',
     parameters: {
       method: 'GET',
-      url: 'https://BrsApi.ir/Api/Market/Gold_Currency.php',
+      url: 'https://api.nerkh.io/v1/prices/json/gold',
       authentication: 'genericCredentialType',
       genericAuthType: 'httpQueryAuth',
       options: { timeout: 15000 },
     },
-    credentials: { httpQueryAuth: newCredential('BrsApi Key') },
+    credentials: { httpQueryAuth: newCredential('Nerkh API Key') },
   },
-  output: [{ gold: [{ name: 'طلای 18 عیار', price: 3500000 }], currency: [{ name: 'دلار', price: 60000 }] }],
+  output: [{ data: { prices: { SEKE_EMAMI: { current: '183500000' } } } }],
+});
+
+const getCurrencyAlerts = node({
+  type: 'n8n-nodes-base.httpRequest',
+  version: 4.4,
+  config: {
+    name: 'Get Currency Prices (Alerts)',
+    parameters: {
+      method: 'GET',
+      url: 'https://api.nerkh.io/v1/prices/json/currency',
+      authentication: 'genericCredentialType',
+      genericAuthType: 'httpQueryAuth',
+      options: { timeout: 15000 },
+    },
+    credentials: { httpQueryAuth: newCredential('Nerkh API Key') },
+  },
+  output: [{ data: { prices: { USD: { current: '191000' } } } }],
 });
 
 const getActiveAlerts = node({
@@ -264,7 +297,7 @@ const getActiveAlerts = node({
       filters: { conditions: [] },
     },
   },
-  output: [{ id: 1, chatId: '12345', asset: 'coin_emami', assetLabel: 'سکه امامی', target: 50000000, direction: 'above' }],
+  output: [{ id: 1, chatId: '12345', asset: 'SEKE_EMAMI', assetLabel: 'سکه امامی', target: 180000000, direction: 'above' }],
 });
 
 const checkTriggered = node({
@@ -276,18 +309,16 @@ const checkTriggered = node({
       mode: 'runOnceForAllItems',
       language: 'javaScript',
       jsCode:
-        "const res = $('Get Prices (Alerts)').first().json;\n" +
-        "const buckets = [];\n" +
-        "if (Array.isArray(res)) { buckets.push(res); } else if (res && typeof res === 'object') { for (const key of Object.keys(res)) { if (Array.isArray(res[key])) buckets.push(res[key]); } }\n" +
-        "const flat = buckets.flat();\n" +
-        "const priceOf = (keywords) => { const row = flat.find((r) => { const name = String(r.name || r.title || r.symbol || ''); return keywords.some((k) => name.includes(k)); }); if (!row) return null; const raw = row.price ?? row.value ?? row.sell ?? row.p; const num = Number(String(raw).replace(/[^\\d.]/g, '')); return Number.isFinite(num) ? num : null; };\n" +
-        "const priceByAsset = { coin_emami: priceOf(['امامی','سکه امامی']), gold_18: priceOf(['طلای 18','طلای ۱۸','18 عیار','۱۸ عیار']), usd: priceOf(['دلار']), eur: priceOf(['یورو']) };\n" +
+        "const gold = $('Get Gold Prices (Alerts)').first().json?.data?.prices || {};\n" +
+        "const cur = $('Get Currency Prices (Alerts)').first().json?.data?.prices || {};\n" +
+        "const all = Object.assign({}, gold, cur);\n" +
+        "const priceOf = (sym) => { const v = all?.[sym]?.current; if (v === undefined || v === null) return null; const n = Number(String(v).replace(/[^\\d.]/g, '')); return Number.isFinite(n) ? n : null; };\n" +
         "const out = [];\n" +
-        "for (const item of $input.all()) { const a = item.json; const current = priceByAsset[a.asset]; if (current === null || current === undefined) continue; const target = Number(a.target); const hit = a.direction === 'below' ? current <= target : current >= target; if (!hit) continue; out.push({ json: { alertId: a.id, chatId: String(a.chatId), assetLabel: a.assetLabel, target, current, direction: a.direction } }); }\n" +
+        "for (const item of $input.all()) { const a = item.json; const current = priceOf(a.asset); if (current === null) continue; const target = Number(a.target); const hit = a.direction === 'below' ? current <= target : current >= target; if (!hit) continue; out.push({ json: { alertId: a.id, chatId: String(a.chatId), assetLabel: a.assetLabel, target, current, direction: a.direction } }); }\n" +
         "return out;",
     },
   },
-  output: [{ alertId: 1, chatId: '12345', assetLabel: 'سکه امامی', target: 50000000, current: 51000000, direction: 'above' }],
+  output: [{ alertId: 1, chatId: '12345', assetLabel: 'سکه امامی', target: 180000000, current: 183500000, direction: 'above' }],
 });
 
 const sendAlert = node({
@@ -333,14 +364,14 @@ const removeFiredAlert = node({
 });
 
 const noteQuery = sticky(
-  '## 🤖 بخش پاسخ‌گویی (تلگرام)\nکاربر پیام می‌دهد → دستور تشخیص داده می‌شود → قیمت لحظه‌ای یا ثبت هشدار.',
+  '## 🤖 بخش پاسخ‌گویی (تلگرام)\nکاربر پیام می‌دهد → دستور تشخیص داده می‌شود → قیمت لحظه‌ای (طلا + ارز) یا ثبت هشدار.',
   [telegramTrigger, routeCommand, sendPrices],
   { color: 4 },
 );
 
 const noteAlert = sticky(
-  '## ⏰ بخش هشدار خودکار (هر ۱۰ دقیقه)\nقیمت گرفته می‌شود → هشدارهای فعال بررسی می‌شوند → پیام هشدار ارسال و هشدار حذف می‌شود.',
-  [everyTenMinutes, getPricesAlerts, removeFiredAlert],
+  '## ⏰ بخش هشدار خودکار (هر ۱۰ دقیقه)\nقیمت طلا و ارز گرفته می‌شود → هشدارهای فعال بررسی می‌شوند → پیام هشدار ارسال و هشدار حذف می‌شود.',
+  [everyTenMinutes, getGoldAlerts, removeFiredAlert],
   { color: 5 },
 );
 
@@ -348,11 +379,11 @@ export default workflow('gold-coin-dollar-price-bot', 'ربات قیمت لحظ�
   .add(telegramTrigger)
   .to(
     routeCommand
-      .onCase(0, getLivePrices.to(buildPriceMessage.to(sendPrices)))
+      .onCase(0, getGold.to(getCurrency.to(buildPriceMessage.to(sendPrices))))
       .onCase(1, parseAlert.to(saveAlert.to(confirmAlert)))
       .onCase(2, sendHelp),
   )
   .add(everyTenMinutes)
-  .to(getPricesAlerts.to(getActiveAlerts.to(checkTriggered.to(sendAlert.to(removeFiredAlert)))))
+  .to(getGoldAlerts.to(getCurrencyAlerts.to(getActiveAlerts.to(checkTriggered.to(sendAlert.to(removeFiredAlert))))))
   .add(noteQuery)
   .add(noteAlert);

@@ -48,11 +48,11 @@
 <div dir="ltr">
 
 ```
-Telegram Trigger ─▶ Route Command ┬─(قیمت)──▶ Get Live Prices ─▶ Build Price Message ─▶ Send Prices to User
+Telegram Trigger ─▶ Route Command ┬─(قیمت)──▶ Get Gold Prices ─▶ Get Currency Prices ─▶ Build Price Message ─▶ Send Prices to User
                                   ├─(هشدار)─▶ Parse Alert Command ─▶ Save Alert ─▶ Confirm Alert
                                   └─(راهنما)─▶ Send Help
 
-Every 10 Minutes ─▶ Get Prices (Alerts) ─▶ Get Active Alerts ─▶ Check Triggered Alerts ─▶ Send Price Alert ─▶ Remove Fired Alert
+Every 10 Minutes ─▶ Get Gold Prices (Alerts) ─▶ Get Currency Prices (Alerts) ─▶ Get Active Alerts ─▶ Check Triggered Alerts ─▶ Send Price Alert ─▶ Remove Fired Alert
 ```
 
 </div>
@@ -65,7 +65,7 @@ Every 10 Minutes ─▶ Get Prices (Alerts) ─▶ Get Active Alerts ─▶ Chec
 
 1. **n8n** را روی سیستم یا سرور خودتان نصب کنید (نه n8n Cloud — برای پایداری از داخل ایران).
 2. **ربات تلگرام** بسازید (با [@BotFather](https://t.me/BotFather)) و توکنش را در یک کردنشیال `Telegram API` به‌نام `Telegram Bot` بگذارید.
-3. **کلید API قیمت** بگیرید (پیش‌فرض: [BrsApi](https://brsapi.ir)) و در یک کردنشیال `Query Auth` با نام پارامتر `key` ذخیره کنید (نام کردنشیال: `BrsApi Key`).
+3. **توکن API قیمت** بگیرید (پیش‌فرض: [nerkh.io](https://nerkh.io)) و در یک کردنشیال `Query Auth` با نام پارامتر `x-api-key` ذخیره کنید (نام کردنشیال: `Nerkh API Key`).
 4. یک **Data Table** به نام `price_alerts` با این ستون‌ها بسازید:
 
    | ستون | نوع |
@@ -82,15 +82,26 @@ Every 10 Minutes ─▶ Get Prices (Alerts) ─▶ Get Active Alerts ─▶ Chec
 
 ---
 
-## 🔁 تعویض API قیمت
+## 🔁 ساختار API و تعویض آن
 
-پیش‌فرض روی **BrsApi** تنظیم شده، اما کد طوری نوشته شده که به ساختار دقیق پاسخ وابسته نیست: نودهای `Build Price Message` و `Check Triggered Alerts` هر آرایه‌ای را در پاسخ می‌گردند و آیتم‌ها را با **نام** پیدا می‌کنند (`دلار`، `سکه امامی`، `طلای ۱۸`، …).
+پیش‌فرض روی **nerkh.io** تنظیم شده. این سرویس دو endpoint جدا دارد و قیمت‌ها به **تومان** هستند:
 
-برای استفاده از API دیگر (مثلاً TGJU یا alanchand) فقط کافی است:
-- در دو نود `Get Live Prices` و `Get Prices (Alerts)` آدرس `URL` و روش احراز هویت را عوض کنید.
-- اگر نام دارایی‌ها در API جدید فرق دارد، کلیدواژه‌های داخل تابع `priceOf(...)` را به‌روز کنید.
+<div dir="ltr">
 
-> ⚠️ نکته‌ی واحد پول: برخی APIها قیمت را به **ریال** و برخی به **تومان** برمی‌گردانند. اگر واحد API با «تومان» در پیام‌ها نمی‌خواند، در نودهای کد آن را تنظیم کنید.
+```
+GET https://api.nerkh.io/v1/prices/json/gold       → طلا و سکه (GOLD18K, GOLD24K, SEKE_EMAMI, SEKE_NIM, SEKE_ROB, SEKE_BAHAR, …)
+GET https://api.nerkh.io/v1/prices/json/currency   → ارز (USD, EUR, GBP, AED, TRY, …)
+```
+
+نمونه‌ی خروجی: `{ "data": { "prices": { "SEKE_EMAMI": { "current": "183500000", ... }, ... } } }`
+
+</div>
+
+هر دارایی از مسیر `data.prices.<SYMBOL>.current` خوانده می‌شود. برای افزودن یا تغییر دارایی‌ها، فقط نمادها را در نودهای `Build Price Message` و `Parse Alert Command` و `Check Triggered Alerts` ویرایش کنید.
+
+برای استفاده از سرویس دیگری (مثلاً BrsApi یا نوسان):
+- آدرس `URL` و روش احراز هویت را در چهار نود HTTP عوض کنید.
+- ساختار خواندن قیمت (`data.prices[...].current`) و نمادها را با API جدید هماهنگ کنید.
 
 ---
 

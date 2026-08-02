@@ -46,16 +46,20 @@ docker run -it --rm \
 
 ---
 
-## گام ۳ — گرفتن کلید API قیمت (BrsApi)
+## گام ۳ — گرفتن توکن API قیمت (nerkh.io)
 
-1. در [brsapi.ir](https://brsapi.ir) ثبت‌نام کنید و یک **کلید API** بگیرید (پلن رایگان برای شروع کافی است).
+1. در [nerkh.io](https://nerkh.io) ثبت‌نام کنید و یک **توکن API** بگیرید (رایگان).
 2. در n8n یک کردنشیال جدید از نوع **Query Auth** بسازید:
-   - **Name** (نام پارامتر): `key`
-   - **Value**: کلید API شما
-3. نام کردنشیال را **`BrsApi Key`** بگذارید.
+   - **Name** (نام پارامتر): `x-api-key`
+   - **Value**: توکن شما
+3. نام کردنشیال را **`Nerkh API Key`** بگذارید.
 4. Save.
 
-> اندپوینت پیش‌فرض ورک‌فلو: `https://BrsApi.ir/Api/Market/Gold_Currency.php`
+> اندپوینت‌های پیش‌فرض ورک‌فلو (قیمت‌ها به **تومان**):
+> - طلا و سکه: `https://api.nerkh.io/v1/prices/json/gold`
+> - ارز: `https://api.nerkh.io/v1/prices/json/currency`
+>
+> نکته: nerkh هدر `Authorization: Bearer <token>` را هم می‌پذیرد؛ اگر ترجیح می‌دهید، به‌جای Query Auth از کردنشیال **Bearer Auth** استفاده کنید.
 
 ---
 
@@ -86,7 +90,7 @@ docker run -it --rm \
 2. در n8n: **Workflows → Import from File / Import from URL** و فایل را وارد کنید.
 3. روی هر نودی که علامت هشدار کردنشیال دارد کلیک کنید و کردنشیال درست را انتخاب کنید:
    - نودهای `Telegram Trigger`, `Send Prices to User`, `Confirm Alert`, `Send Help`, `Send Price Alert` → کردنشیال **Telegram Bot**
-   - نودهای `Get Live Prices`, `Get Prices (Alerts)` → کردنشیال **BrsApi Key**
+   - نودهای `Get Gold Prices`, `Get Currency Prices`, `Get Gold Prices (Alerts)`, `Get Currency Prices (Alerts)` → کردنشیال **Nerkh API Key**
 4. در نودهای `Save Alert`, `Get Active Alerts`, `Remove Fired Alert` مطمئن شوید Data Table روی **`price_alerts`** تنظیم است.
 
 ---
@@ -106,10 +110,9 @@ docker run -it --rm \
 | مشکل | علت محتمل / راه‌حل |
 |---|---|
 | ربات جواب نمی‌دهد | ورک‌فلو Activate نشده، یا توکن تلگرام اشتباه است |
-| قیمت‌ها «—» نشان داده می‌شوند | کلیدواژه‌های `priceOf` با نام‌های API نمی‌خوانند؛ خروجی نود `Get Live Prices` را ببینید و کلیدواژه‌ها را تنظیم کنید |
+| قیمت‌ها «—» نشان داده می‌شوند | نماد دارایی با API نمی‌خواند؛ خروجی نود `Get Gold Prices` را ببینید و نمادها (`GOLD18K`, `SEKE_EMAMI`, …) را در نودهای کد تنظیم کنید |
 | هشدار ثبت می‌شود ولی خبر نمی‌آید | نام/ستون‌های Data Table اشتباه است، یا Trigger زمان‌بندی غیرفعال است |
-| خطای احراز هویت API | نام پارامتر کردنشیال باید `key` باشد و مقدارش کلید معتبر |
-| واحد پول اشتباه (ریال به‌جای تومان) | در نودهای کد، برچسب واحد یا تقسیم بر ۱۰ را تنظیم کنید |
+| خطای احراز هویت API | نام پارامتر کردنشیال باید `x-api-key` باشد و مقدارش توکن معتبر nerkh |
 
 </div>
 
