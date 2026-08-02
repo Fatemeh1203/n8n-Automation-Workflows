@@ -1,0 +1,401 @@
+{
+  "name": "اتوماسیون فاکتور خرید و فروش با هوش مصنوعی",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {
+          "download": true,
+          "imageSize": "large"
+        }
+      },
+      "id": "node-telegram-trigger",
+      "name": "دریافت عکس از تلگرام",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.5,
+      "position": [
+        240,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 1
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.message.photo }}",
+              "operator": {
+                "type": "array",
+                "operation": "notEmpty"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "node-if-photo",
+      "name": "آیا عکس فاکتور است؟",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        528,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const out = [];\nconst items = $input.all();\nfor (let i = 0; i < items.length; i++) {\n  const j = items[i].json || {};\n  const msg = j.message || {};\n  const caption = (msg.caption || msg.text || '').toString();\n  const chatId = (msg.chat && msg.chat.id) ? msg.chat.id : '';\n  let invoiceType = 'خرید';\n  if (caption.indexOf('فروش') !== -1) { invoiceType = 'فروش'; }\n  else if (caption.indexOf('خرید') !== -1) { invoiceType = 'خرید'; }\n  const binary = items[i].binary || {};\n  const key = Object.keys(binary)[0];\n  if (!key) { throw new Error('تصویری در پیام یافت نشد. لطفاً عکس فاکتور را ارسال کنید.'); }\n  const buffer = await this.helpers.getBinaryDataBuffer(i, key);\n  const base64 = buffer.toString('base64');\n  const mime = binary[key].mimeType || 'image/jpeg';\n  const dataUrl = 'data:' + mime + ';base64,' + base64;\n  const systemPrompt = 'You are a precise accounting OCR assistant for Iranian invoices. Read the invoice image and extract structured data. Return ONLY one valid JSON object with no markdown and no explanation. Use exactly these keys: invoice_number, invoice_date, party_name, description, quantity, amount_before_tax, tax_rate, vat_amount, total_with_tax. Output every number and every digit using Western Arabic numerals (0-9) only, never Persian or Arabic-Indic digits. Numbers must be plain digits with no thousands separators and no currency words. Read each digit carefully and double-check the amounts so totals are consistent. Keep invoice_date exactly as printed but with Western digits (Jalali calendar is fine). Use empty string for missing text fields and 0 for missing numbers.';\n  const userText = 'این تصویر یک فاکتور ' + invoiceType + ' است. اطلاعات آن را دقیق استخراج کن و فقط یک شیء JSON با ارقام لاتین برگردان.';\n  const aiBody = {\n    model: 'qwen/qwen3.6-27b',\n    temperature: 0,\n    messages: [\n      { role: 'system', content: systemPrompt },\n      { role: 'user', content: [\n        { type: 'text', text: userText },\n        { type: 'image_url', image_url: { url: dataUrl } }\n      ] }\n    ]\n  };\n  out.push({ json: { invoiceType: invoiceType, chatId: chatId, caption: caption, aiBody: aiBody } });\n}\nreturn out;"
+      },
+      "id": "node-prepare-ai",
+      "name": "آماده‌سازی درخواست هوش مصنوعی",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        800,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.groq.com/openai/v1/chat/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json.aiBody }}",
+        "options": {
+          "timeout": 120000
+        }
+      },
+      "id": "node-http-ai",
+      "name": "استخراج داده با هوش مصنوعی",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1072,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const resp = $json || {};\nlet content = '';\ntry { content = resp.choices[0].message.content; } catch (e) { content = ''; }\nif (!content) { throw new Error('پاسخ هوش مصنوعی خالی یا نامعتبر بود.'); }\nconst faDigits = '۰۱۲۳۴۵۶۷۸۹';\nconst arDigits = '٠١٢٣٤٥٦٧٨٩';\nconst normDigits = (val) => {\n  let str = String(val === null || val === undefined ? '' : val);\n  for (let d = 0; d < 10; d++) {\n    str = str.split(faDigits[d]).join(String(d));\n    str = str.split(arDigits[d]).join(String(d));\n  }\n  return str;\n};\nlet clean = normDigits(content).trim();\nclean = clean.split(String.fromCharCode(96)).join('');\nif (clean.slice(0, 4).toLowerCase() === 'json') { clean = clean.slice(4); }\nclean = clean.trim();\nconst a = clean.indexOf('{');\nconst b = clean.lastIndexOf('}');\nif (a !== -1 && b !== -1) { clean = clean.slice(a, b + 1); }\nlet data;\ntry { data = JSON.parse(clean); } catch (err) { throw new Error('استخراج JSON از پاسخ هوش مصنوعی ناموفق بود: ' + clean.slice(0, 300)); }\nconst prep = $('آماده‌سازی درخواست هوش مصنوعی').item.json;\nconst toNum = (v) => {\n  if (v === null || v === undefined || v === '') return 0;\n  let str = normDigits(v).replace(/[,٬،\\s]/g, '').replace(/[^0-9.\\-]/g, '');\n  if (str === '' || str === '-' || str === '.') return 0;\n  const n = Number(str);\n  return isNaN(n) ? 0 : n;\n};\nconst cleanText = (v) => normDigits(v).trim();\nconst amountBeforeTax = toNum(data.amount_before_tax);\nlet vatAmount = toNum(data.vat_amount);\nlet totalWithTax = toNum(data.total_with_tax);\nif (!vatAmount && totalWithTax && amountBeforeTax) { vatAmount = totalWithTax - amountBeforeTax; }\nif (!totalWithTax) { totalWithTax = amountBeforeTax + vatAmount; }\nconst row = {\n  'نوع فاکتور': prep.invoiceType,\n  'تاریخ فاکتور': cleanText(data.invoice_date),\n  'شماره فاکتور': cleanText(data.invoice_number),\n  'طرف حساب': cleanText(data.party_name),\n  'شرح کالا/خدمات': cleanText(data.description),\n  'تعداد': toNum(data.quantity),\n  'مبلغ بدون مالیات': amountBeforeTax,\n  'نرخ مالیات (درصد)': toNum(data.tax_rate),\n  'مالیات ارزش افزوده': vatAmount,\n  'مبلغ کل با مالیات': totalWithTax,\n  'زمان ثبت': $now.toISO(),\n  'شناسه چت': prep.chatId\n};\nreturn { json: row };"
+      },
+      "id": "node-parse-map",
+      "name": "پارس و نگاشت حسابداری",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1328,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json['نوع فاکتور'] }}",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "rightValue": "خرید"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "خرید"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json['نوع فاکتور'] }}",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "rightValue": "فروش"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "فروش"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "node-switch",
+      "name": "تفکیک خرید یا فروش",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        1584,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "فاکتور خرید"
+        },
+        "columns": {
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false,
+          "mappingMode": "autoMapInputData",
+          "matchingColumns": [],
+          "schema": [],
+          "value": {}
+        },
+        "options": {
+          "handlingExtraData": "insertInNewColumn"
+        }
+      },
+      "id": "node-sheet-purchase",
+      "name": "ثبت فاکتور خرید در گوگل شیت",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1840,
+        128
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "فاکتور فروش"
+        },
+        "columns": {
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false,
+          "mappingMode": "autoMapInputData",
+          "matchingColumns": [],
+          "schema": [],
+          "value": {}
+        },
+        "options": {
+          "handlingExtraData": "insertInNewColumn"
+        }
+      },
+      "id": "node-sheet-sale",
+      "name": "ثبت فاکتور فروش در گوگل شیت",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1840,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "={{ $('پارس و نگاشت حسابداری').item.json['شناسه چت'] }}",
+        "text": "=✅ فاکتور {{ $('پارس و نگاشت حسابداری').item.json['نوع فاکتور'] }} با موفقیت ثبت شد.\n\n📄 شماره فاکتور: {{ $('پارس و نگاشت حسابداری').item.json['شماره فاکتور'] }}\n📅 تاریخ: {{ $('پارس و نگاشت حسابداری').item.json['تاریخ فاکتور'] }}\n👤 طرف حساب: {{ $('پارس و نگاشت حسابداری').item.json['طرف حساب'] }}\n💰 مبلغ بدون مالیات: {{ $('پارس و نگاشت حسابداری').item.json['مبلغ بدون مالیات'] }}\n🧾 مالیات ارزش افزوده: {{ $('پارس و نگاشت حسابداری').item.json['مالیات ارزش افزوده'] }}\n💵 مبلغ کل: {{ $('پارس و نگاشت حسابداری').item.json['مبلغ کل با مالیات'] }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "id": "node-confirm",
+      "name": "ارسال تأیید به کاربر",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        2128,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "={{ $json.message.chat.id }}",
+        "text": "لطفاً «عکس» فاکتور را ارسال کنید و در کپشن آن کلمه «خرید» یا «فروش» را بنویسید تا در حساب مناسب ثبت شود.",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "id": "node-help",
+      "name": "راهنمای ارسال عکس",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        800,
+        464
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## راه‌اندازی برای هر مشتری (۴ گام)\n۱) تلگرام: کردنشیال Telegram API را با توکن بات مشتری وصل کنید (روی هر دو نود تلگرام و نود تریگر).\n۲) هوش مصنوعی (نود «استخراج داده...»): یک Credential از نوع Header Auth بسازید — Name: Authorization ، Value: Bearer <GROQ_API_KEY>. آدرس و مدل از پیش تنظیم است (Groq / qwen3.6-27b).\n۳) گوگل شیت: در دو نود ثبت، فایل حسابداری مشتری را انتخاب کنید (تب‌ها: «فاکتور خرید» و «فاکتور فروش»).\n۴) ورک‌فلو را Activate کنید. مشتری در تلگرام عکس فاکتور را با کپشن «خرید» یا «فروش» می‌فرستد.\n\nراهنمای کامل: فایل docs/SETUP-GUIDE.md",
+        "height": 396,
+        "width": 1900,
+        "color": 4
+      },
+      "id": "node-sticky",
+      "name": "راهنمای راه‌اندازی",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "دریافت عکس از تلگرام": {
+      "main": [
+        [
+          {
+            "node": "آیا عکس فاکتور است؟",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "آیا عکس فاکتور است؟": {
+      "main": [
+        [
+          {
+            "node": "آماده‌سازی درخواست هوش مصنوعی",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "راهنمای ارسال عکس",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "آماده‌سازی درخواست هوش مصنوعی": {
+      "main": [
+        [
+          {
+            "node": "استخراج داده با هوش مصنوعی",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "استخراج داده با هوش مصنوعی": {
+      "main": [
+        [
+          {
+            "node": "پارس و نگاشت حسابداری",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "پارس و نگاشت حسابداری": {
+      "main": [
+        [
+          {
+            "node": "تفکیک خرید یا فروش",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "تفکیک خرید یا فروش": {
+      "main": [
+        [
+          {
+            "node": "ثبت فاکتور خرید در گوگل شیت",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "ثبت فاکتور فروش در گوگل شیت",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ثبت فاکتور خرید در گوگل شیت": {
+      "main": [
+        [
+          {
+            "node": "ارسال تأیید به کاربر",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ثبت فاکتور فروش در گوگل شیت": {
+      "main": [
+        [
+          {
+            "node": "ارسال تأیید به کاربر",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "pinData": {}
+}
