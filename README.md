@@ -1,3 +1,16 @@
+![n8n](https://img.shields.io/badge/n8n-EA4B71?logo=n8n&logoColor=white)
+![telegram-bot](https://img.shields.io/badge/telegram--bot-26A5E4?logo=telegram&logoColor=white)
+![ocr](https://img.shields.io/badge/ocr-4CAF50)
+![invoice](https://img.shields.io/badge/invoice-795548)
+![automation](https://img.shields.io/badge/automation-607D8B)
+![persian](https://img.shields.io/badge/persian-239F40)
+![ollama](https://img.shields.io/badge/ollama-000000?logo=ollama&logoColor=white)
+![accounting](https://img.shields.io/badge/accounting-9C27B0)
+
+**Tags / برچسب‌ها:** `n8n` · `telegram-bot` · `ocr` · `invoice` · `automation` · `persian` · `ollama` · `accounting`
+
+---
+
 <div dir="rtl">
 
 # اتوماسیون اسکن فاکتور خرید و فروش با هوش مصنوعی
