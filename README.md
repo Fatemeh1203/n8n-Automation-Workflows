@@ -50,9 +50,6 @@
 
 از یک سرویس خارجی رایگان سازگار با OpenAI (**Groq**) استفاده می‌شود. چون درخواست از سرور n8n ارسال می‌شود، محدودیت منطقه‌ای ایران اعمال نمی‌شود. مدل پیش‌فرض `qwen/qwen3.6-27b` (بینایی/OCR) است و در نود «آماده‌سازی درخواست هوش مصنوعی» قابل تغییر است.
 
-## مرحله‌ی بعدی (سامانه‌ی مؤدیان)
-
-ارسال مستقیم فاکتورهای فروش به سامانه‌ی مؤدیان سازمان امور مالیاتی، به‌عنوان ماژول توسعه‌ی آینده در `docs/SETUP-GUIDE.md` توضیح داده شده است.
 
 </div>
 
@@ -95,9 +92,6 @@ Telegram (photo + "buy"/"sell" caption)
 
 A free, foreign, OpenAI-compatible service (**Groq**) is used. Because the request is sent from n8n's servers, Iran's regional restrictions do not apply. The default model is `qwen/qwen3.6-27b` (vision/OCR) and can be changed in the "Prepare AI request" node.
 
-## Next stage (Moadian tax system)
-
-Direct submission of sales invoices to Iran's tax authority (Moadian) is described as a future module in `docs/SETUP-GUIDE.md`.
 
 ## Notes
 
