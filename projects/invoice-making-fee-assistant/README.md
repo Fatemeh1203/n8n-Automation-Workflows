@@ -1,74 +1,79 @@
 # 🧾 Gold Invoice & Making-Fee Assistant | دستیار محاسبه‌ی فاکتور و اجرت
 
-> An n8n **web-form** assistant for goldsmiths: enter weight, karat, daily gold rate, making-fee % and profit % → it computes and issues an accurate invoice, archives every invoice, and sends a daily sales report.
+> An n8n **web-form** assistant for goldsmiths: enter weight, karat, making-fee % and profit % (gold rate fetched **online** or entered manually) → it computes and issues a **professional invoice**, archives it to a Data Table **and a Google Sheet**, **emails the invoice** (with an HTML file attached) to the customer, and sends a daily sales report.
 >
-> دستیار **فرم‌وب** برای طلافروش: وزن، عیار، نرخ روز طلا، درصد اجرت و درصد سود را وارد کن → فاکتور دقیق محاسبه و صادر می‌شود، هر فاکتور آرشیو می‌شود و گزارش فروش روزانه ارسال می‌شود.
+> دستیار **فرم‌وب** برای طلافروش: وزن، عیار، درصد اجرت و سود را وارد کن (نرخ طلا **آنلاین** یا دستی) → **فاکتور حرفه‌ای** محاسبه و صادر می‌شود، در Data Table **و یک Google Sheet** آرشیو می‌شود، **فاکتور ایمیل می‌شود** (فایل HTML پیوست) و گزارش فروش روزانه ارسال می‌شود.
 
-`#n8n` `#invoice` `#gold` `#goldsmith` `#فاکتور_طلا` `#اجرت` `#محاسبه_طلا` `#طلافروش` `#automation` `#اتوماسیون` `#no_code` `#webform` `#فرم_آنلاین` `#iran` `#workflow`
+`#n8n` `#invoice` `#gold` `#goldsmith` `#فاکتور_طلا` `#اجرت` `#محاسبه_طلا` `#طلافروش` `#automation` `#اتوماسیون` `#webform` `#فرم_آنلاین` `#google_sheets` `#gmail` `#iran` `#workflow`
 
 ---
 
 ## 🇬🇧 English
 
 ### What it does
-- **Web form** (no Telegram needed) — the shop enters weight, karat, 18k gold rate, making-fee %, profit %.
-- **Compute** — `goldValue = weight × rate × (karat/750)`, then making-fee, then profit, then total.
-- **Archive** — every invoice is stored in an n8n Data Table.
-- **Invoice output** — a clean printable invoice is shown to the customer right after submit.
-- **Daily report (21:00)** — sums today's invoices and sends a report to the owner's Telegram.
+- **Web form** (public URL, no Telegram) — customer/shop enters the details.
+- **Online gold rate** — a form dropdown chooses **online** (fetched live from nerkh.io) or **manual** rate.
+- **Compute** — `goldValue = weight × rate × (karat/750)`, then making-fee, profit, total.
+- **Professional invoice** — a styled, printable invoice with a **logo/shop-name header** (editable in the code node).
+- **Archive** — every invoice → n8n **Data Table** + **Google Sheet** (list).
+- **Email** — the invoice is emailed to the customer (and BCC to the owner) with the HTML file **attached** — that's also where the file is stored.
+- **Daily report (21:00)** — sums today's invoices → owner's Telegram.
 
-### Why a shop pays for it
-Manual calculation errors in gold mean direct money loss. This removes them and issues a consistent invoice every time.
+### Make it accessible for buyers to test (#1)
+The **Invoice Form** node has a fixed path `gold-invoice`. After Activate, its **Production URL** is:
+`https://<your-n8n-host>/form/gold-invoice`
+Share that link — anyone can open it, fill it, and get a real invoice. That link is your live demo.
 
-### Input method — form, not Telegram
-This assistant uses an **n8n Form Trigger**, which gives a **public URL**. That URL is also a live demo a buyer can open, test, and then decide to buy — no GitHub needed.
+### Credentials
+| Feature | Credential | Note |
+|---|---|---|
+| Online rate | Nerkh API Key (Query Auth, `x-api-key`) | optional; manual works without it |
+| Google Sheet | Google Sheets OAuth | |
+| Email | Gmail OAuth | |
+| Daily report | Telegram | set your numeric `chatId` |
 
-### Workflow map
-```
-Invoice Form ─▶ Compute Invoice ─▶ Archive Invoice ─▶ Show Invoice (printable)
-Daily 21:00  ─▶ Get Today Invoices ─▶ Aggregate Report ─▶ Send Daily Report (Telegram)
-```
+> External steps (Sheet, Email) run with **continue-on-error**, so the invoice is always computed and shown even before those credentials are connected.
 
-### Setup (short)
-1. Run n8n locally / on your own server.
-2. Create a Data Table `invoices` (columns below).
-3. (Report only) create a `Telegram Bot` credential and set your numeric chat id in **Send Daily Report**.
-4. Import [`workflow.json`](workflow.json), open the form's Production URL, **Activate**.
+### Edit shop / logo (#6)
+Open the **Compute & Render Invoice** code node → edit the `SHOP` object at the top (`name`, `phone`, `address`, `logoUrl`, `ownerEmail`, `color`).
+
+### Data Table `invoices` / Google Sheet columns
+`invoiceNo, day, dateFa, customer, phone, email, item, weight, karat, rate18, goldValue, makingFee, profit, total`
 
 Full guide: [`docs/setup.md`](docs/setup.md) · Sales guide: [`docs/sales.md`](docs/sales.md)
-
-### Data Table `invoices`
-`invoiceNo`, `day`, `dateFa`, `customer`, `item`, `weight`, `karat`, `rate18`, `goldValue`, `makingFee`, `profit`, `total`
-> `id`, `createdAt`, `updatedAt` are added automatically by n8n — don't create them.
 
 ---
 
 ## 🇮🇷 فارسی
 
 ### چه‌کار می‌کند؟
-- **فرم وب** (بدون نیاز به تلگرام) — مغازه وزن، عیار، نرخ طلای ۱۸، درصد اجرت و درصد سود را وارد می‌کند.
-- **محاسبه** — `ارزش طلا = وزن × نرخ × (عیار÷۷۵۰)`، سپس اجرت، سپس سود، سپس مبلغ نهایی.
-- **آرشیو** — هر فاکتور در Data Table ذخیره می‌شود.
-- **خروجی فاکتور** — بلافاصله بعد از ثبت، یک فاکتور تمیز و قابل‌چاپ به مشتری نشان داده می‌شود.
-- **گزارش روزانه (ساعت ۲۱)** — فاکتورهای امروز جمع‌بندی و به تلگرام مالک ارسال می‌شود.
+- **فرم وب** (لینک عمومی، بدون تلگرام).
+- **نرخ طلای آنلاین** — یک گزینه در فرم: **آنلاین** (زنده از nerkh.io) یا **دستی**.
+- **محاسبه** — `ارزش طلا = وزن × نرخ × (عیار÷۷۵۰)` + اجرت + سود = مبلغ نهایی.
+- **فاکتور حرفه‌ای** — فاکتور زیبا و قابل‌چاپ با **هدر لوگو/نام فروشگاه** (در نود کد قابل‌ویرایش).
+- **آرشیو** — هر فاکتور → **Data Table** + **Google Sheet**.
+- **ایمیل** — فاکتور با فایل HTML **پیوست** به مشتری (و BCC به مالک) ایمیل می‌شود؛ فایل هم همان‌جا ذخیره می‌ماند.
+- **گزارش روزانه (۲۱)** → تلگرام مالک.
 
-### چرا مغازه‌دار پول می‌دهد؟
-خطای محاسبه‌ی دستی در طلا مستقیماً یعنی ضرر مالی. این ابزار آن خطا را حذف می‌کند و هر بار فاکتور یک‌دست صادر می‌کند.
+### در دسترس‌گذاشتن فرم برای تست خریدار (مورد ۱)
+نود **Invoice Form** مسیر ثابت `gold-invoice` دارد. بعد از Activate، **Production URL** فرم این است:
+`https://<آدرس-n8n-شما>/form/gold-invoice`
+این لینک را بده؛ هر کسی می‌تواند بازش کند، پرش کند و فاکتور واقعی بگیرد. همین لینک، دموی زنده‌ات است.
 
-### ورودی — فرم، نه تلگرام
-این دستیار با **Form Trigger** کار می‌کند و یک **لینک عمومی** می‌دهد. همان لینک، دموی زنده‌ای است که خریدار می‌تواند بازش کند، تست کند و بعد بخرد — بدون نیاز به گیت‌هاب.
+### کردنشیال‌ها
+| قابلیت | کردنشیال | توضیح |
+|---|---|---|
+| نرخ آنلاین | Nerkh API Key (Query Auth، `x-api-key`) | اختیاری؛ حالت دستی بدون آن کار می‌کند |
+| گوگل‌شیت | Google Sheets OAuth | |
+| ایمیل | Gmail OAuth | |
+| گزارش روزانه | Telegram | `chatId` عددی خودت را بگذار |
 
-### راه‌اندازی (خلاصه)
-۱. n8n را روی سیستم/سرور خودت اجرا کن.
-۲. یک Data Table به نام `invoices` بساز (ستون‌ها پایین).
-۳. (فقط برای گزارش) کردنشیال `Telegram Bot` بساز و در نود **Send Daily Report** آی‌دی عددی تلگرام خودت را بگذار.
-۴. فایل [`workflow.json`](workflow.json) را Import کن، Production URL فرم را باز کن و **Activate** بزن.
+> مراحل بیرونی (شیت و ایمیل) با **ادامه‌درصورت‌خطا** تنظیم شده‌اند؛ پس فاکتور همیشه محاسبه و نمایش داده می‌شود حتی قبل از وصل‌کردن این کردنشیال‌ها.
+
+### ویرایش فروشگاه / لوگو (مورد ۶)
+نود **Compute & Render Invoice** را باز کن → شیء `SHOP` بالای کد را ویرایش کن (`name`, `phone`, `address`, `logoUrl`, `ownerEmail`, `color`).
 
 راهنمای کامل: [`docs/setup.md`](docs/setup.md) · راهنمای فروش: [`docs/sales.md`](docs/sales.md)
-
-### ستون‌های Data Table `invoices`
-`invoiceNo`, `day`, `dateFa`, `customer`, `item`, `weight`, `karat`, `rate18`, `goldValue`, `makingFee`, `profit`, `total`
-> `id`, `createdAt`, `updatedAt` به‌صورت خودکار توسط n8n اضافه می‌شوند — نسازیدشان.
 
 ---
 
@@ -76,8 +81,8 @@ Full guide: [`docs/setup.md`](docs/setup.md) · Sales guide: [`docs/sales.md`](d
 
 | File | توضیح |
 |---|---|
-| `workflow.json` | ورک‌فلو آماده‌ی Import در n8n / ready-to-import workflow |
-| `workflow.sdk.ts` | همان ورک‌فلو به‌صورت کد / workflow as code (n8n SDK) |
+| `workflow.json` | ورک‌فلو آماده‌ی Import / ready-to-import |
+| `workflow.sdk.ts` | ورک‌فلو به‌صورت کد / workflow as code |
 | `docs/setup.md` | راهنمای راه‌اندازی / setup guide |
 | `docs/sales.md` | راهنمای فروش / sales guide |
 
@@ -85,7 +90,7 @@ Full guide: [`docs/setup.md`](docs/setup.md) · Sales guide: [`docs/sales.md`](d
 
 <div align="center">
 
-Part of **36 money-making n8n + Claude automation projects for Iran** · بخشی از **۳۶ پروژه‌ی اتوماسیون پول‌ساز با n8n و کلود، مخصوص شرایط ایران**
+Part of **36 money-making n8n + Claude automation projects for Iran** · بخشی از **۳۶ پروژه‌ی اتوماسیون پول‌ساز با n8n و کلود**
 
 `#n8n_iran` `#طلافروش` `#فاکتور` `#invoice_automation` `#fintech` `#claude`
 

@@ -4,8 +4,69 @@ import {
   trigger,
   newCredential,
   expr,
+  ifElse,
   sticky,
 } from '@n8n/workflow-sdk';
+
+const COMPUTE_JS = `
+const form = $('Invoice Form').first().json;
+const num = (x) => { const n = Number(String(x == null ? '' : x).replace(/[^0-9.\\-]/g, '')); return Number.isFinite(n) ? n : 0; };
+const weight = num(form.weight);
+const karat = num(form.karat) || 750;
+const rate18 = num($json.rate18 != null ? $json.rate18 : form.rate18);
+const feePct = num(form.feePct);
+const profitPct = num(form.profitPct);
+const goldValue = Math.round(weight * rate18 * (karat / 750));
+const makingFee = Math.round(goldValue * feePct / 100);
+const subtotal = goldValue + makingFee;
+const profit = Math.round(subtotal * profitPct / 100);
+const total = subtotal + profit;
+const now = new Date();
+const day = now.toLocaleDateString("en-CA", { timeZone: "Asia/Tehran" });
+const dateFa = now.toLocaleDateString("fa-IR", { timeZone: "Asia/Tehran" });
+const invoiceNo = "INV-" + now.getTime().toString().slice(-8);
+const customer = form.customer || "—";
+const item = form.item || "—";
+const phone = form.phone || "—";
+const email = form.email || "";
+const money = (n) => Number(n || 0).toLocaleString("fa-IR");
+const SHOP = { name: "طلا و جواهر شما", phone: "021-00000000", address: "آدرس فروشگاه شما", logoUrl: "", ownerEmail: "you@example.com", color: "#b8860b" };
+const logo = SHOP.logoUrl ? ("<img src='" + SHOP.logoUrl + "' alt='logo' style='height:56px;border-radius:8px'>") : ("<div style='height:56px;width:56px;border-radius:50%;background:rgba(255,255,255,.25);display:flex;align-items:center;justify-content:center;font-size:26px'>\u{1F947}</div>");
+const H = [];
+H.push("<div style='direction:rtl;font-family:Tahoma,Arial,sans-serif;max-width:560px;margin:16px auto;border:1px solid #eee;border-radius:14px;overflow:hidden;box-shadow:0 6px 22px rgba(0,0,0,.10)'>");
+H.push("<div style='background:linear-gradient(135deg," + SHOP.color + ",#7a5901);color:#fff;padding:18px 20px;display:flex;justify-content:space-between;align-items:center'>");
+H.push("<div><div style='font-size:20px;font-weight:bold'>" + SHOP.name + "</div><div style='font-size:12px;opacity:.9'>" + SHOP.address + " — " + SHOP.phone + "</div></div>");
+H.push(logo);
+H.push("</div>");
+H.push("<div style='padding:16px 20px'>");
+H.push("<div style='display:flex;justify-content:space-between;font-size:13px;color:#555;margin-bottom:10px'><span>فاکتور: <b>" + invoiceNo + "</b></span><span>تاریخ: " + dateFa + "</span></div>");
+H.push("<div style='font-size:14px;margin-bottom:10px'>مشتری: <b>" + customer + "</b>" + (phone && phone !== "—" ? " — " + phone : "") + "</div>");
+H.push("<table style='border-collapse:collapse;width:100%;font-size:14px'>");
+H.push("<thead><tr style='background:#faf6ec'><th style='text-align:right;padding:8px;border:1px solid #eee'>شرح</th><th style='padding:8px;border:1px solid #eee'>وزن</th><th style='padding:8px;border:1px solid #eee'>عیار</th><th style='padding:8px;border:1px solid #eee'>مبلغ (تومان)</th></tr></thead>");
+H.push("<tbody><tr><td style='padding:8px;border:1px solid #eee'>" + item + "</td><td style='padding:8px;border:1px solid #eee;text-align:center'>" + weight + " گرم</td><td style='padding:8px;border:1px solid #eee;text-align:center'>" + karat + "</td><td style='padding:8px;border:1px solid #eee;text-align:left'>" + money(goldValue) + "</td></tr></tbody>");
+H.push("</table>");
+H.push("<table style='border-collapse:collapse;width:100%;font-size:14px;margin-top:8px'>");
+H.push("<tr><td style='padding:6px 8px;color:#555'>ارزش طلا</td><td style='padding:6px 8px;text-align:left'>" + money(goldValue) + " تومان</td></tr>");
+H.push("<tr><td style='padding:6px 8px;color:#555'>اجرت (" + feePct + "%)</td><td style='padding:6px 8px;text-align:left'>" + money(makingFee) + " تومان</td></tr>");
+H.push("<tr><td style='padding:6px 8px;color:#555'>سود (" + profitPct + "%)</td><td style='padding:6px 8px;text-align:left'>" + money(profit) + " تومان</td></tr>");
+H.push("<tr><td style='padding:10px 8px;font-weight:bold;font-size:16px;border-top:2px solid " + SHOP.color + "'>مبلغ نهایی</td><td style='padding:10px 8px;text-align:left;font-weight:bold;font-size:16px;border-top:2px solid " + SHOP.color + ";color:" + SHOP.color + "'>" + money(total) + " تومان</td></tr>");
+H.push("</table>");
+H.push("<div style='display:flex;justify-content:space-between;margin-top:18px;font-size:12px;color:#777'><span>مهر و امضای فروشنده</span><span>با تشکر از خرید شما \u{1F64F}</span></div>");
+H.push("</div>");
+H.push("<div style='background:#faf6ec;color:#8a6d1b;text-align:center;padding:8px;font-size:11px'>" + SHOP.name + " • " + SHOP.phone + "</div>");
+H.push("</div>");
+const invoiceHtml = H.join("");
+const b64 = Buffer.from(invoiceHtml, "utf8").toString("base64");
+return [{ json: { invoiceNo, day, dateFa, customer, phone, email, item, weight, karat, rate18, goldValue, makingFee, profit, total, ownerEmail: SHOP.ownerEmail, invoiceHtml }, binary: { invoice: { data: b64, fileName: invoiceNo + ".html", mimeType: "text/html" } } }];
+`;
+
+const AGG_JS =
+  "const rows = $input.all().map((i) => i.json);\n" +
+  "const count = rows.length;\n" +
+  "const totalSum = rows.reduce((s, r) => s + Number(r.total || 0), 0);\n" +
+  "const feeSum = rows.reduce((s, r) => s + Number(r.makingFee || 0) + Number(r.profit || 0), 0);\n" +
+  "const day = rows[0]?.day || new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Tehran' });\n" +
+  "return [{ json: { day, count, totalSum, feeSum } }];";
 
 const invoiceForm = trigger({
   type: 'n8n-nodes-base.formTrigger',
@@ -14,53 +75,87 @@ const invoiceForm = trigger({
     name: 'Invoice Form',
     parameters: {
       formTitle: 'صدور فاکتور طلا',
-      formDescription: 'وزن، عیار، نرخ روز، اجرت و سود را وارد کنید تا فاکتور دقیق صادر شود.',
+      formDescription: 'وزن، عیار، اجرت و سود را وارد کنید. نرخ طلا را می‌توانید آنلاین بگیرید یا دستی وارد کنید.',
       formFields: {
         values: [
           { fieldLabel: 'شرح کالا (مثلاً انگشتر)', fieldName: 'item', fieldType: 'text', requiredField: false },
           { fieldLabel: 'نام مشتری', fieldName: 'customer', fieldType: 'text', requiredField: false },
+          { fieldLabel: 'شماره تماس مشتری', fieldName: 'phone', fieldType: 'text', requiredField: false },
+          { fieldLabel: 'ایمیل مشتری (برای ارسال فاکتور)', fieldName: 'email', fieldType: 'email', requiredField: false },
           { fieldLabel: 'وزن (گرم)', fieldName: 'weight', fieldType: 'number', requiredField: true },
           { fieldLabel: 'عیار (مثلاً 750 برای ۱۸)', fieldName: 'karat', fieldType: 'number', defaultValue: '750', requiredField: true },
-          { fieldLabel: 'نرخ هر گرم طلای ۱۸ عیار (تومان)', fieldName: 'rate18', fieldType: 'number', requiredField: true },
+          { fieldLabel: 'نرخ طلا', fieldName: 'rateMode', fieldType: 'dropdown', requiredField: true, defaultValue: 'آنلاین (خودکار)', fieldOptions: { values: [{ option: 'آنلاین (خودکار)' }, { option: 'دستی' }] } },
+          { fieldLabel: 'نرخ هر گرم طلای ۱۸ عیار (تومان) — فقط حالت دستی', fieldName: 'rate18', fieldType: 'number', requiredField: false },
           { fieldLabel: 'درصد اجرت', fieldName: 'feePct', fieldType: 'number', requiredField: true },
           { fieldLabel: 'درصد سود', fieldName: 'profitPct', fieldType: 'number', requiredField: true },
         ],
       },
-      options: { appendAttribution: false, buttonLabel: 'صدور فاکتور' },
+      options: { appendAttribution: false, buttonLabel: 'صدور فاکتور', path: 'gold-invoice' },
     },
   },
-  output: [{ item: 'انگشتر', customer: 'آقای رضایی', weight: 5, karat: 750, rate18: 3800000, feePct: 12, profitPct: 7 }],
+  output: [{ item: 'انگشتر', customer: 'آقای رضایی', phone: '0912...', email: 'a@b.com', weight: 5, karat: 750, rateMode: 'آنلاین (خودکار)', rate18: 3800000, feePct: 12, profitPct: 7 }],
+});
+
+const useOnlineRate = ifElse({
+  version: 2.3,
+  config: {
+    name: 'Use Online Rate?',
+    parameters: {
+      conditions: {
+        options: { caseSensitive: false, leftValue: '', typeValidation: 'loose' },
+        combinator: 'and',
+        conditions: [
+          { leftValue: expr('{{ $json.rateMode }}'), rightValue: 'آنلاین', operator: { type: 'string', operation: 'contains' } },
+        ],
+      },
+    },
+  },
+});
+
+const getGoldRate = node({
+  type: 'n8n-nodes-base.httpRequest',
+  version: 4.4,
+  config: {
+    name: 'Get Live Gold Rate',
+    onError: 'continueRegularOutput',
+    parameters: {
+      method: 'GET',
+      url: 'https://api.nerkh.io/v1/prices/json/gold',
+      authentication: 'genericCredentialType',
+      genericAuthType: 'httpQueryAuth',
+      options: { timeout: 15000 },
+    },
+    credentials: { httpQueryAuth: newCredential('Nerkh API Key') },
+  },
+  output: [{ data: { prices: { GOLD18K: { current: '18281100' } } } }],
+});
+
+const applyOnlineRate = node({
+  type: 'n8n-nodes-base.set',
+  version: 3.5,
+  config: {
+    name: 'Apply Online Rate',
+    parameters: {
+      mode: 'manual',
+      includeOtherFields: false,
+      assignments: {
+        assignments: [
+          { id: 'r', name: 'rate18', value: expr("{{ $json.data?.prices?.GOLD18K?.current ?? $('Invoice Form').item.json.rate18 }}"), type: 'number' },
+        ],
+      },
+    },
+  },
+  output: [{ rate18: 18281100 }],
 });
 
 const computeInvoice = node({
   type: 'n8n-nodes-base.code',
   version: 2,
   config: {
-    name: 'Compute Invoice',
-    parameters: {
-      mode: 'runOnceForAllItems',
-      language: 'javaScript',
-      jsCode:
-        "const f = $json;\n" +
-        "const num = (x) => { const n = Number(String(x ?? '').replace(/[^\\d.\\-]/g, '')); return Number.isFinite(n) ? n : 0; };\n" +
-        "const weight = num(f.weight);\n" +
-        "const karat = num(f.karat) || 750;\n" +
-        "const rate18 = num(f.rate18);\n" +
-        "const feePct = num(f.feePct);\n" +
-        "const profitPct = num(f.profitPct);\n" +
-        "const goldValue = Math.round(weight * rate18 * (karat / 750));\n" +
-        "const makingFee = Math.round(goldValue * feePct / 100);\n" +
-        "const subtotal = goldValue + makingFee;\n" +
-        "const profit = Math.round(subtotal * profitPct / 100);\n" +
-        "const total = subtotal + profit;\n" +
-        "const now = new Date();\n" +
-        "const day = now.toLocaleDateString('en-CA', { timeZone: 'Asia/Tehran' });\n" +
-        "const dateFa = now.toLocaleDateString('fa-IR', { timeZone: 'Asia/Tehran' });\n" +
-        "const invoiceNo = 'INV-' + now.getTime().toString().slice(-8);\n" +
-        "return [{ json: { invoiceNo, day, dateFa, customer: f.customer || '—', item: f.item || '—', weight, karat, rate18, goldValue, makingFee, profit, total } }];",
-    },
+    name: 'Compute & Render Invoice',
+    parameters: { mode: 'runOnceForAllItems', language: 'javaScript', jsCode: COMPUTE_JS },
   },
-  output: [{ invoiceNo: 'INV-12345678', day: '2026-08-04', dateFa: '۱۴۰۵/۵/۱۳', customer: 'آقای رضایی', item: 'انگشتر', weight: 5, karat: 750, rate18: 3800000, goldValue: 19000000, makingFee: 2280000, profit: 1489600, total: 22769600 }],
+  output: [{ invoiceNo: 'INV-12345678', day: '2026-08-04', dateFa: '۱۴۰۵/۵/۱۳', customer: 'آقای رضایی', phone: '0912', email: 'a@b.com', item: 'انگشتر', weight: 5, karat: 750, rate18: 18281100, goldValue: 19000000, makingFee: 2280000, profit: 1489600, total: 22769600, ownerEmail: 'you@example.com', invoiceHtml: '<div>...</div>' }],
 });
 
 const archiveInvoice = node({
@@ -75,18 +170,11 @@ const archiveInvoice = node({
       columns: {
         mappingMode: 'defineBelow',
         value: {
-          invoiceNo: expr('{{ $json.invoiceNo }}'),
-          day: expr('{{ $json.day }}'),
-          dateFa: expr('{{ $json.dateFa }}'),
-          customer: expr('{{ $json.customer }}'),
-          item: expr('{{ $json.item }}'),
-          weight: expr('{{ $json.weight }}'),
-          karat: expr('{{ $json.karat }}'),
-          rate18: expr('{{ $json.rate18 }}'),
-          goldValue: expr('{{ $json.goldValue }}'),
-          makingFee: expr('{{ $json.makingFee }}'),
-          profit: expr('{{ $json.profit }}'),
-          total: expr('{{ $json.total }}'),
+          invoiceNo: expr('{{ $json.invoiceNo }}'), day: expr('{{ $json.day }}'), dateFa: expr('{{ $json.dateFa }}'),
+          customer: expr('{{ $json.customer }}'), phone: expr('{{ $json.phone }}'), email: expr('{{ $json.email }}'),
+          item: expr('{{ $json.item }}'), weight: expr('{{ $json.weight }}'), karat: expr('{{ $json.karat }}'),
+          rate18: expr('{{ $json.rate18 }}'), goldValue: expr('{{ $json.goldValue }}'), makingFee: expr('{{ $json.makingFee }}'),
+          profit: expr('{{ $json.profit }}'), total: expr('{{ $json.total }}'),
         },
         matchingColumns: [],
         schema: [
@@ -94,6 +182,8 @@ const archiveInvoice = node({
           { id: 'day', displayName: 'day', required: false, defaultMatch: false, display: true, type: 'string', canBeUsedToMatch: true },
           { id: 'dateFa', displayName: 'dateFa', required: false, defaultMatch: false, display: true, type: 'string', canBeUsedToMatch: false },
           { id: 'customer', displayName: 'customer', required: false, defaultMatch: false, display: true, type: 'string', canBeUsedToMatch: false },
+          { id: 'phone', displayName: 'phone', required: false, defaultMatch: false, display: true, type: 'string', canBeUsedToMatch: false },
+          { id: 'email', displayName: 'email', required: false, defaultMatch: false, display: true, type: 'string', canBeUsedToMatch: false },
           { id: 'item', displayName: 'item', required: false, defaultMatch: false, display: true, type: 'string', canBeUsedToMatch: false },
           { id: 'weight', displayName: 'weight', required: false, defaultMatch: false, display: true, type: 'number', canBeUsedToMatch: false },
           { id: 'karat', displayName: 'karat', required: false, defaultMatch: false, display: true, type: 'number', canBeUsedToMatch: false },
@@ -110,6 +200,69 @@ const archiveInvoice = node({
   output: [{ id: 1 }],
 });
 
+const appendSheet = node({
+  type: 'n8n-nodes-base.googleSheets',
+  version: 4.7,
+  config: {
+    name: 'Append to Sheet',
+    onError: 'continueRegularOutput',
+    parameters: {
+      resource: 'sheet',
+      operation: 'append',
+      documentId: { __rl: true, mode: 'id', value: '19fTJM9-sIyVrv1MivnnpWRv_yNEIXd75dKmJEgvhtwg' },
+      sheetName: { __rl: true, mode: 'list', value: '0', cachedResultName: 'Sheet1' },
+      columns: {
+        mappingMode: 'autoMapInputData',
+        value: {},
+        matchingColumns: [],
+        schema: [
+          { id: 'invoiceNo', displayName: 'invoiceNo', required: false, defaultMatch: false, display: true, type: 'string', canBeUsedToMatch: true },
+          { id: 'day', displayName: 'day', required: false, defaultMatch: false, display: true, type: 'string', canBeUsedToMatch: false },
+          { id: 'dateFa', displayName: 'dateFa', required: false, defaultMatch: false, display: true, type: 'string', canBeUsedToMatch: false },
+          { id: 'customer', displayName: 'customer', required: false, defaultMatch: false, display: true, type: 'string', canBeUsedToMatch: false },
+          { id: 'phone', displayName: 'phone', required: false, defaultMatch: false, display: true, type: 'string', canBeUsedToMatch: false },
+          { id: 'email', displayName: 'email', required: false, defaultMatch: false, display: true, type: 'string', canBeUsedToMatch: false },
+          { id: 'item', displayName: 'item', required: false, defaultMatch: false, display: true, type: 'string', canBeUsedToMatch: false },
+          { id: 'weight', displayName: 'weight', required: false, defaultMatch: false, display: true, type: 'number', canBeUsedToMatch: false },
+          { id: 'karat', displayName: 'karat', required: false, defaultMatch: false, display: true, type: 'number', canBeUsedToMatch: false },
+          { id: 'rate18', displayName: 'rate18', required: false, defaultMatch: false, display: true, type: 'number', canBeUsedToMatch: false },
+          { id: 'goldValue', displayName: 'goldValue', required: false, defaultMatch: false, display: true, type: 'number', canBeUsedToMatch: false },
+          { id: 'makingFee', displayName: 'makingFee', required: false, defaultMatch: false, display: true, type: 'number', canBeUsedToMatch: false },
+          { id: 'profit', displayName: 'profit', required: false, defaultMatch: false, display: true, type: 'number', canBeUsedToMatch: false },
+          { id: 'total', displayName: 'total', required: false, defaultMatch: false, display: true, type: 'number', canBeUsedToMatch: false },
+        ],
+      },
+      options: { useAppend: true },
+    },
+    credentials: { googleSheetsOAuth2Api: newCredential('Google Sheets') },
+  },
+  output: [{ appended: true }],
+});
+
+const sendEmail = node({
+  type: 'n8n-nodes-base.gmail',
+  version: 2.2,
+  config: {
+    name: 'Email Invoice',
+    onError: 'continueRegularOutput',
+    parameters: {
+      resource: 'message',
+      operation: 'send',
+      sendTo: expr('{{ $json.email || $json.ownerEmail }}'),
+      subject: expr('فاکتور خرید شما — {{ $json.invoiceNo }}'),
+      emailType: 'html',
+      message: expr('{{ $json.invoiceHtml }}'),
+      options: {
+        appendAttribution: false,
+        bccList: expr('{{ $json.ownerEmail }}'),
+        attachmentsUi: { attachmentsBinary: [{ property: 'invoice' }] },
+      },
+    },
+    credentials: { gmailOAuth2: newCredential('Gmail') },
+  },
+  output: [{ id: 'sent' }],
+});
+
 const showInvoice = node({
   type: 'n8n-nodes-base.form',
   version: 2.5,
@@ -118,19 +271,7 @@ const showInvoice = node({
     parameters: {
       operation: 'completion',
       respondWith: 'showText',
-      responseText: expr(
-        '<div style="direction:rtl;font-family:Tahoma,Arial,sans-serif;max-width:480px;margin:20px auto;border:1px solid #ddd;border-radius:8px;padding:16px">' +
-        '<h2 style="margin:0 0 8px">🧾 فاکتور فروش طلا</h2>' +
-        "<p style=\"margin:2px 0;color:#555\">شماره: {{ $('Compute Invoice').item.json.invoiceNo }} — تاریخ: {{ $('Compute Invoice').item.json.dateFa }}</p>" +
-        "<p style=\"margin:2px 0;color:#555\">مشتری: {{ $('Compute Invoice').item.json.customer }} | کالا: {{ $('Compute Invoice').item.json.item }}</p>" +
-        '<table style="border-collapse:collapse;width:100%;margin-top:10px">' +
-        "<tr><td style=\"border:1px solid #eee;padding:6px\">وزن</td><td style=\"border:1px solid #eee;padding:6px\">{{ $('Compute Invoice').item.json.weight }} گرم ({{ $('Compute Invoice').item.json.karat }})</td></tr>" +
-        "<tr><td style=\"border:1px solid #eee;padding:6px\">ارزش طلا</td><td style=\"border:1px solid #eee;padding:6px\">{{ $('Compute Invoice').item.json.goldValue.toLocaleString('fa-IR') }} تومان</td></tr>" +
-        "<tr><td style=\"border:1px solid #eee;padding:6px\">اجرت</td><td style=\"border:1px solid #eee;padding:6px\">{{ $('Compute Invoice').item.json.makingFee.toLocaleString('fa-IR') }} تومان</td></tr>" +
-        "<tr><td style=\"border:1px solid #eee;padding:6px\">سود</td><td style=\"border:1px solid #eee;padding:6px\">{{ $('Compute Invoice').item.json.profit.toLocaleString('fa-IR') }} تومان</td></tr>" +
-        "<tr><td style=\"border:1px solid #eee;padding:6px;font-weight:bold\">مبلغ نهایی</td><td style=\"border:1px solid #eee;padding:6px;font-weight:bold\">{{ $('Compute Invoice').item.json.total.toLocaleString('fa-IR') }} تومان</td></tr>" +
-        '</table></div>'
-      ),
+      responseText: expr('{{ $json.invoiceHtml }}'),
     },
   },
   output: [{}],
@@ -169,20 +310,7 @@ const getTodayInvoices = node({
 const aggregateReport = node({
   type: 'n8n-nodes-base.code',
   version: 2,
-  config: {
-    name: 'Aggregate Report',
-    parameters: {
-      mode: 'runOnceForAllItems',
-      language: 'javaScript',
-      jsCode:
-        "const rows = $input.all().map((i) => i.json);\n" +
-        "const count = rows.length;\n" +
-        "const totalSum = rows.reduce((s, r) => s + Number(r.total || 0), 0);\n" +
-        "const feeSum = rows.reduce((s, r) => s + Number(r.makingFee || 0) + Number(r.profit || 0), 0);\n" +
-        "const day = rows[0]?.day || new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Tehran' });\n" +
-        "return [{ json: { day, count, totalSum, feeSum } }];",
-    },
-  },
+  config: { name: 'Aggregate Report', parameters: { mode: 'runOnceForAllItems', language: 'javaScript', jsCode: AGG_JS } },
   output: [{ day: '2026-08-04', count: 3, totalSum: 68000000, feeSum: 11000000 }],
 });
 
@@ -209,20 +337,24 @@ const sendReport = node({
 });
 
 const noteForm = sticky(
-  '## 🧾 صدور فاکتور\nفرم وب → محاسبه (ارزش طلا + اجرت + سود) → آرشیو در Data Table → نمایش فاکتور به مشتری.\n\nلینک عمومی فرم را می‌توان برای تست به خریدار داد.',
+  '## 🧾 صدور فاکتور\nفرم وب → (نرخ آنلاین یا دستی) → محاسبه و رندر فاکتور حرفه‌ای → آرشیو در Data Table + Google Sheet + ایمیل به مشتری → نمایش فاکتور.\n\nلینک عمومی فرم (path: gold-invoice) را برای تست به مشتری/خریدار بده.',
   [invoiceForm, computeInvoice, showInvoice],
   { color: 4 },
 );
 
 const noteReport = sticky(
-  '## 📊 گزارش روزانه (ساعت ۲۱)\nفاکتورهای امروز خوانده و جمع‌بندی می‌شوند و به تلگرام مالک ارسال می‌شود.\n\n`chatId` نود ارسال را با آی‌دی عددی تلگرام خودتان جایگزین کنید.',
+  '## 📊 گزارش روزانه (ساعت ۲۱)\nفاکتورهای امروز جمع‌بندی و به تلگرام مالک ارسال می‌شوند. `chatId` را با آی‌دی خودتان جایگزین کنید.',
   [dailyReport, getTodayInvoices, sendReport],
   { color: 5 },
 );
 
 export default workflow('invoice-making-fee-assistant', 'دستیار محاسبه‌ی فاکتور و اجرت')
   .add(invoiceForm)
-  .to(computeInvoice.to(archiveInvoice.to(showInvoice)))
+  .to(useOnlineRate.onTrue(getGoldRate.to(applyOnlineRate.to(computeInvoice))).onFalse(computeInvoice))
+  .add(computeInvoice).to(archiveInvoice)
+  .add(computeInvoice).to(appendSheet)
+  .add(computeInvoice).to(sendEmail)
+  .add(computeInvoice).to(showInvoice)
   .add(dailyReport)
   .to(getTodayInvoices.to(aggregateReport.to(sendReport)))
   .add(noteForm)
