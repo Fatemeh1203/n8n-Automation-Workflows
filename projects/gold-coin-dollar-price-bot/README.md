@@ -1,137 +1,96 @@
-<div dir="rtl">
+# 🥇 Gold, Coin & Dollar Live Price Bot | ربات قیمت لحظه‌ای طلا، سکه و دلار
 
-# 🥇 ربات قیمت لحظه‌ای طلا، سکه و دلار (پروژه‌ی ساده)
+> An n8n Telegram bot that fetches **live gold, coin, and currency prices** from an Iranian API (nerkh.io) and supports **price alerts** — plus a scheduled checker that notifies users when a target price is hit.
+>
+> رباتی با n8n که قیمت لحظه‌ای **طلا، سکه و ارز** را از API ایرانی (nerkh.io) می‌گیرد و قابلیت **هشدار قیمت** دارد؛ به‌همراه بررسی زمان‌بندی‌شده که وقتی قیمت به هدف رسید به کاربر خبر می‌دهد.
 
-یک ربات تلگرام که قیمت لحظه‌ای **طلا، سکه و ارز** را از یک API ایرانی می‌گیرد و به مشتری نشان می‌دهد؛ به‌همراه قابلیت **هشدار قیمت** («وقتی به این عدد رسید خبرم کن»).
-
-> بازار هدف: **طلافروش** — سطح: **ساده** — زمان اجرا: ۲ تا ۳ روز
-> این سریع‌ترین و دیدنی‌ترین پروژه‌ی کاتالوگ است و بهترین گزینه برای اولین نمونه‌کار گیت‌هاب/لینکدین.
-
----
-
-## 💡 چرا مشتری بابتش پول می‌دهد؟
-
-مغازه‌دار طلافروش روزی ده‌ها بار جواب «قیمت چنده؟» را می‌دهد. این ربات:
-
-- پاسخ لحظه‌ای و خودکار می‌دهد و وقت فروشنده را آزاد می‌کند.
-- کانال تلگرام مغازه را پرمخاطب و فعال نگه می‌دارد.
-- با هشدار قیمت، مشتری را به کانال برمی‌گرداند (وقتی قیمت به عدد دلخواهش رسید).
-
-**جمله‌ی فروش:** «شما روزی چند ساعت وقت می‌گذارید تا جواب «قیمت چنده» را بدهید؛ من این را کاملاً خودکار می‌کنم و کانالتان را هم فعال نگه می‌دارم.»
+`#n8n` `#telegram_bot` `#gold_price` `#dollar_price` `#coin_price` `#قیمت_طلا` `#قیمت_دلار` `#قیمت_سکه` `#ربات_تلگرام` `#automation` `#اتوماسیون` `#nerkh` `#iran` `#no_code` `#workflow`
 
 ---
 
-## 🧩 این ربات چه‌کار می‌کند؟
+## 🇬🇧 English
 
-ربات از دو بخش مستقل تشکیل شده که هر دو در یک فایل ورک‌فلو هستند:
+### What it does
+- **Telegram query bot** — user sends `قیمت` → replies with live gold, coin, and currency prices (in Toman).
+- **Price alerts** — user sends `هشدار سکه 190000000` → an alert is stored.
+- **Scheduled checker (every 10 min)** — fetches prices, checks all stored alerts, notifies the user when the target is reached, then removes the fired alert.
 
-### ۱) بخش پاسخ‌گویی (Trigger تلگرام)
-کاربر در تلگرام پیام می‌دهد و ربات دستور را تشخیص می‌دهد:
+### Why a shop pays for it
+A goldsmith answers "what's the price?" dozens of times a day. This bot answers instantly, keeps the shop's Telegram channel active, and brings customers back with price alerts.
 
-| اگر کاربر بنویسد… | ربات چه می‌کند |
-|---|---|
-| `قیمت` (یا `نرخ` / `price`) | قیمت لحظه‌ای طلا، سکه و ارز را می‌فرستد |
-| `هشدار سکه 50000000` | یک هشدار صعودی ثبت می‌کند |
-| `هشدار دلار 60000 پایین` | یک هشدار نزولی ثبت می‌کند |
-| هر چیز دیگر | پیام راهنما را می‌فرستد |
+### Tech
+n8n · Telegram · nerkh.io price API · n8n Data Table (no external database).
 
-### ۲) بخش هشدار خودکار (Trigger زمان‌بندی — هر ۱۰ دقیقه)
-هر ۱۰ دقیقه قیمت‌ها گرفته می‌شوند، همه‌ی هشدارهای ثبت‌شده بررسی می‌شوند، و هر هشداری که به قیمت هدف رسیده باشد:
-
-1. یک پیام هشدار برای کاربر ارسال می‌شود.
-2. آن هشدار از لیست حذف می‌شود (تا دوباره تکرار نشود).
-
----
-
-## 🗺️ نقشه‌ی ورک‌فلو
-
-<div dir="ltr">
+### Workflow map
 
 ```
-Telegram Trigger ─▶ Route Command ┬─(قیمت)──▶ Get Gold Prices ─▶ Get Currency Prices ─▶ Build Price Message ─▶ Send Prices to User
-                                  ├─(هشدار)─▶ Parse Alert Command ─▶ Save Alert ─▶ Confirm Alert
-                                  └─(راهنما)─▶ Send Help
+Telegram Trigger ─▶ Route Command ┬─(price)─▶ Get Gold Prices ─▶ Get Currency Prices ─▶ Build Price Message ─▶ Send Prices
+                                  ├─(alert)─▶ Parse Alert Command ─▶ Save Alert ─▶ Confirm Alert
+                                  └─(help)──▶ Send Help
 
 Every 10 Minutes ─▶ Get Gold Prices (Alerts) ─▶ Get Currency Prices (Alerts) ─▶ Get Active Alerts ─▶ Check Triggered Alerts ─▶ Send Price Alert ─▶ Remove Fired Alert
 ```
 
-</div>
+### Setup (short)
+1. Run n8n locally / on your own server.
+2. Create a Telegram bot with [@BotFather](https://t.me/BotFather) → credential `Telegram Bot`.
+3. Get a free token from [nerkh.io](https://nerkh.io) → **Query Auth** credential, param `x-api-key`, name `Nerkh API Key`.
+4. Create a Data Table `price_alerts` with columns: `chatId`, `asset`, `assetLabel`, `target`, `direction`.
+5. Import [`workflow.json`](workflow.json), attach credentials, **Activate**.
 
----
+Full guide: [`docs/setup.md`](docs/setup.md) · Sales guide: [`docs/sales.md`](docs/sales.md)
 
-## ⚙️ پیش‌نیازها و راه‌اندازی
-
-راهنمای کامل و گام‌به‌گام در فایل **[docs/setup.md](docs/setup.md)** است. خلاصه‌اش:
-
-1. **n8n** را روی سیستم یا سرور خودتان نصب کنید (نه n8n Cloud — برای پایداری از داخل ایران).
-2. **ربات تلگرام** بسازید (با [@BotFather](https://t.me/BotFather)) و توکنش را در یک کردنشیال `Telegram API` به‌نام `Telegram Bot` بگذارید.
-3. **توکن API قیمت** بگیرید (پیش‌فرض: [nerkh.io](https://nerkh.io)) و در یک کردنشیال `Query Auth` با نام پارامتر `x-api-key` ذخیره کنید (نام کردنشیال: `Nerkh API Key`).
-4. یک **Data Table** به نام `price_alerts` با این ستون‌ها بسازید:
-
-   | ستون | نوع |
-   |---|---|
-   | `chatId` | String |
-   | `asset` | String |
-   | `assetLabel` | String |
-   | `target` | Number |
-   | `direction` | String |
-
-   > ستون `createdAt` را دستی نسازید — n8n خودش آن را به‌صورت سیستمی اضافه می‌کند.
-
-5. فایل **[workflow.json](workflow.json)** را در n8n وارد (Import) کنید، کردنشیال‌ها و Data Table را وصل کنید و ورک‌فلو را **Activate** کنید.
-
----
-
-## 🔁 ساختار API و تعویض آن
-
-پیش‌فرض روی **nerkh.io** تنظیم شده. این سرویس دو endpoint جدا دارد و قیمت‌ها به **تومان** هستند:
-
-<div dir="ltr">
-
+### API structure (nerkh.io)
 ```
-GET https://api.nerkh.io/v1/prices/json/gold       → طلا و سکه (GOLD18K, GOLD24K, SEKE_EMAMI, SEKE_NIM, SEKE_ROB, SEKE_BAHAR, …)
-GET https://api.nerkh.io/v1/prices/json/currency   → ارز (USD, EUR, GBP, AED, TRY, …)
+GET https://api.nerkh.io/v1/prices/json/gold       → gold & coins (GOLD18K, GOLD24K, SEKE_EMAMI, SEKE_NIM, SEKE_ROB, SEKE_BAHAR, …)
+GET https://api.nerkh.io/v1/prices/json/currency   → currencies (USD, EUR, GBP, AED, TRY, …)
 ```
-
-نمونه‌ی خروجی: `{ "data": { "prices": { "SEKE_EMAMI": { "current": "183500000", ... }, ... } } }`
-
-</div>
-
-هر دارایی از مسیر `data.prices.<SYMBOL>.current` خوانده می‌شود. برای افزودن یا تغییر دارایی‌ها، فقط نمادها را در نودهای `Build Price Message` و `Parse Alert Command` و `Check Triggered Alerts` ویرایش کنید.
-
-برای استفاده از سرویس دیگری (مثلاً BrsApi یا نوسان):
-- آدرس `URL` و روش احراز هویت را در چهار نود HTTP عوض کنید.
-- ساختار خواندن قیمت (`data.prices[...].current`) و نمادها را با API جدید هماهنگ کنید.
+Each price is read from `data.prices.<SYMBOL>.current` (values are in **Toman**).
 
 ---
 
-## 📂 فایل‌های این پروژه
+## 🇮🇷 فارسی
 
-<div dir="ltr">
+### چه‌کار می‌کند؟
+- **ربات پاسخ‌گو در تلگرام** — کاربر `قیمت` می‌فرستد → قیمت لحظه‌ای طلا، سکه و ارز (به تومان) پاسخ داده می‌شود.
+- **هشدار قیمت** — کاربر `هشدار سکه 190000000` می‌فرستد → یک هشدار ذخیره می‌شود.
+- **بررسی خودکار (هر ۱۰ دقیقه)** — قیمت‌ها گرفته می‌شوند، همه‌ی هشدارها بررسی می‌شوند، هرکدام که به هدف رسید پیام می‌رود و هشدار حذف می‌شود.
+
+### چرا مغازه‌دار پول می‌دهد؟
+طلافروش روزی ده‌ها بار جواب «قیمت چنده؟» را می‌دهد. این ربات فوری جواب می‌دهد، کانال تلگرام مغازه را فعال نگه می‌دارد و با هشدار قیمت مشتری را برمی‌گرداند.
+
+### ابزارها
+n8n · تلگرام · API قیمت nerkh.io · Data Table داخلی n8n (بدون پایگاه‌داده‌ی بیرونی).
+
+### راه‌اندازی (خلاصه)
+۱. n8n را روی سیستم/سرور خودت اجرا کن.
+۲. با [@BotFather](https://t.me/BotFather) ربات تلگرام بساز → کردنشیال `Telegram Bot`.
+۳. از [nerkh.io](https://nerkh.io) توکن رایگان بگیر → کردنشیال **Query Auth**، پارامتر `x-api-key`، نام `Nerkh API Key`.
+۴. یک Data Table به نام `price_alerts` با ستون‌های `chatId`, `asset`, `assetLabel`, `target`, `direction` بساز.
+۵. فایل [`workflow.json`](workflow.json) را Import کن، کردنشیال‌ها را وصل و **Activate** کن.
+
+راهنمای کامل: [`docs/setup.md`](docs/setup.md) · راهنمای فروش: [`docs/sales.md`](docs/sales.md)
+
+### واحد پول
+قیمت‌ها به **تومان** هستند و از مسیر `data.prices.<نماد>.current` خوانده می‌شوند.
+
+---
+
+## 📂 Files | فایل‌ها
 
 | File | توضیح |
 |---|---|
-| `workflow.json` | ورک‌فلو آماده‌ی Import در n8n |
-| `workflow.sdk.ts` | همان ورک‌فلو به‌صورت کد (n8n Workflow SDK) — برای بازبینی و نگه‌داری |
-| `docs/setup.md` | راهنمای گام‌به‌گام راه‌اندازی |
-| `docs/sales.md` | راهنمای فروش و قیمت‌گذاری به مشتری |
-
-</div>
-
----
-
-## 🧪 تست سریع
-
-بعد از Activate کردن، در تلگرام به ربات بنویسید:
-- `قیمت` → باید لیست قیمت‌ها بیاید.
-- `هشدار دلار 1` → چون قیمت دلار قطعاً بالای ۱ است، در اجرای بعدیِ زمان‌بندی باید هشدار بگیرید (برای تست خوب است).
+| `workflow.json` | ورک‌فلو آماده‌ی Import در n8n / ready-to-import workflow |
+| `workflow.sdk.ts` | همان ورک‌فلو به‌صورت کد / workflow as code (n8n SDK) |
+| `docs/setup.md` | راهنمای راه‌اندازی / setup guide |
+| `docs/sales.md` | راهنمای فروش / sales guide |
 
 ---
 
 <div align="center">
 
-بخشی از مجموعه‌ی **۳۶ پروژه‌ی اتوماسیون پول‌ساز با n8n و کلود — مخصوص شرایط ایران**
+Part of **36 money-making n8n + Claude automation projects for Iran** · بخشی از **۳۶ پروژه‌ی اتوماسیون پول‌ساز با n8n و کلود، مخصوص شرایط ایران**
 
-</div>
+`#n8n_iran` `#طلافروش` `#اتوماسیون_پولساز` `#claude` `#telegram` `#fintech` `#currency_api` `#gold_api`
 
 </div>
