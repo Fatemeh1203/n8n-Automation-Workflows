@@ -1,0 +1,448 @@
+{
+  "name": "دستیار محاسبه‌ی فاکتور و اجرت",
+  "nodes": [
+    {
+      "parameters": {
+        "formTitle": "صدور فاکتور طلا",
+        "formDescription": "وزن، عیار، نرخ روز، اجرت و سود را وارد کنید تا فاکتور دقیق صادر شود.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "شرح کالا (مثلاً انگشتر)",
+              "fieldName": "item",
+              "fieldType": "text",
+              "requiredField": false
+            },
+            {
+              "fieldLabel": "نام مشتری",
+              "fieldName": "customer",
+              "fieldType": "text",
+              "requiredField": false
+            },
+            {
+              "fieldLabel": "وزن (گرم)",
+              "fieldName": "weight",
+              "fieldType": "number",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "عیار (مثلاً 750 برای ۱۸)",
+              "fieldName": "karat",
+              "fieldType": "number",
+              "defaultValue": "750",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "نرخ هر گرم طلای ۱۸ عیار (تومان)",
+              "fieldName": "rate18",
+              "fieldType": "number",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "درصد اجرت",
+              "fieldName": "feePct",
+              "fieldType": "number",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "درصد سود",
+              "fieldName": "profitPct",
+              "fieldType": "number",
+              "requiredField": true
+            }
+          ]
+        },
+        "options": {
+          "appendAttribution": false,
+          "buttonLabel": "صدور فاکتور"
+        }
+      },
+      "id": "form",
+      "name": "Invoice Form",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.6,
+      "position": [
+        0,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const f = $json;\nconst num = (x) => { const n = Number(String(x ?? '').replace(/[^\\d.\\-]/g, '')); return Number.isFinite(n) ? n : 0; };\nconst weight = num(f.weight);\nconst karat = num(f.karat) || 750;\nconst rate18 = num(f.rate18);\nconst feePct = num(f.feePct);\nconst profitPct = num(f.profitPct);\nconst goldValue = Math.round(weight * rate18 * (karat / 750));\nconst makingFee = Math.round(goldValue * feePct / 100);\nconst subtotal = goldValue + makingFee;\nconst profit = Math.round(subtotal * profitPct / 100);\nconst total = subtotal + profit;\nconst now = new Date();\nconst day = now.toLocaleDateString('en-CA', { timeZone: 'Asia/Tehran' });\nconst dateFa = now.toLocaleDateString('fa-IR', { timeZone: 'Asia/Tehran' });\nconst invoiceNo = 'INV-' + now.getTime().toString().slice(-8);\nreturn [{ json: { invoiceNo, day, dateFa, customer: f.customer || '—', item: f.item || '—', weight, karat, rate18, goldValue, makingFee, profit, total } }];"
+      },
+      "id": "compute",
+      "name": "Compute Invoice",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        230,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "row",
+        "operation": "insert",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "name",
+          "value": "invoices"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "invoiceNo": "={{ $json.invoiceNo }}",
+            "day": "={{ $json.day }}",
+            "dateFa": "={{ $json.dateFa }}",
+            "customer": "={{ $json.customer }}",
+            "item": "={{ $json.item }}",
+            "weight": "={{ $json.weight }}",
+            "karat": "={{ $json.karat }}",
+            "rate18": "={{ $json.rate18 }}",
+            "goldValue": "={{ $json.goldValue }}",
+            "makingFee": "={{ $json.makingFee }}",
+            "profit": "={{ $json.profit }}",
+            "total": "={{ $json.total }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "invoiceNo",
+              "displayName": "invoiceNo",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "day",
+              "displayName": "day",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "dateFa",
+              "displayName": "dateFa",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "customer",
+              "displayName": "customer",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "item",
+              "displayName": "item",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "weight",
+              "displayName": "weight",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "karat",
+              "displayName": "karat",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "rate18",
+              "displayName": "rate18",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "goldValue",
+              "displayName": "goldValue",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "makingFee",
+              "displayName": "makingFee",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "profit",
+              "displayName": "profit",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "total",
+              "displayName": "total",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "archive",
+      "name": "Archive Invoice",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        460,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "completion",
+        "respondWith": "showText",
+        "responseText": "=<div style=\"direction:rtl;font-family:Tahoma,Arial,sans-serif;max-width:480px;margin:20px auto;border:1px solid #ddd;border-radius:8px;padding:16px\"><h2 style=\"margin:0 0 8px\">🧾 فاکتور فروش طلا</h2><p style=\"margin:2px 0;color:#555\">شماره: {{ $('Compute Invoice').item.json.invoiceNo }} — تاریخ: {{ $('Compute Invoice').item.json.dateFa }}</p><p style=\"margin:2px 0;color:#555\">مشتری: {{ $('Compute Invoice').item.json.customer }} | کالا: {{ $('Compute Invoice').item.json.item }}</p><table style=\"border-collapse:collapse;width:100%;margin-top:10px\"><tr><td style=\"border:1px solid #eee;padding:6px\">وزن</td><td style=\"border:1px solid #eee;padding:6px\">{{ $('Compute Invoice').item.json.weight }} گرم ({{ $('Compute Invoice').item.json.karat }})</td></tr><tr><td style=\"border:1px solid #eee;padding:6px\">ارزش طلا</td><td style=\"border:1px solid #eee;padding:6px\">{{ $('Compute Invoice').item.json.goldValue.toLocaleString('fa-IR') }} تومان</td></tr><tr><td style=\"border:1px solid #eee;padding:6px\">اجرت</td><td style=\"border:1px solid #eee;padding:6px\">{{ $('Compute Invoice').item.json.makingFee.toLocaleString('fa-IR') }} تومان</td></tr><tr><td style=\"border:1px solid #eee;padding:6px\">سود</td><td style=\"border:1px solid #eee;padding:6px\">{{ $('Compute Invoice').item.json.profit.toLocaleString('fa-IR') }} تومان</td></tr><tr><td style=\"border:1px solid #eee;padding:6px;font-weight:bold\">مبلغ نهایی</td><td style=\"border:1px solid #eee;padding:6px;font-weight:bold\">{{ $('Compute Invoice').item.json.total.toLocaleString('fa-IR') }} تومان</td></tr></table></div>"
+      },
+      "id": "show",
+      "name": "Show Invoice",
+      "type": "n8n-nodes-base.form",
+      "typeVersion": 2.5,
+      "position": [
+        690,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "days",
+              "daysInterval": 1,
+              "triggerAtHour": 21,
+              "triggerAtMinute": 0
+            }
+          ]
+        }
+      },
+      "id": "cron",
+      "name": "Daily 21:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        260
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "row",
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "name",
+          "value": "invoices"
+        },
+        "returnAll": true,
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "day",
+              "condition": "eq",
+              "keyValue": "={{ $now.setZone('Asia/Tehran').toFormat('yyyy-MM-dd') }}"
+            }
+          ]
+        }
+      },
+      "id": "getday",
+      "name": "Get Today Invoices",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        230,
+        260
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const rows = $input.all().map((i) => i.json);\nconst count = rows.length;\nconst totalSum = rows.reduce((s, r) => s + Number(r.total || 0), 0);\nconst feeSum = rows.reduce((s, r) => s + Number(r.makingFee || 0) + Number(r.profit || 0), 0);\nconst day = rows[0]?.day || new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Tehran' });\nreturn [{ json: { day, count, totalSum, feeSum } }];"
+      },
+      "id": "agg",
+      "name": "Aggregate Report",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        460,
+        260
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "000000000",
+        "text": "=📊 گزارش فروش امروز ({{ $json.day }})\n\nتعداد فاکتور: {{ $json.count }}\nجمع کل فروش: {{ $json.totalSum.toLocaleString('fa-IR') }} تومان\nجمع اجرت + سود: {{ $json.feeSum.toLocaleString('fa-IR') }} تومان",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "id": "report",
+      "name": "Send Daily Report",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        690,
+        260
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "REPLACE_WITH_TELEGRAM_CRED",
+          "name": "Telegram Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## 🧾 صدور فاکتور\nفرم وب → محاسبه (ارزش طلا + اجرت + سود) → آرشیو در Data Table → نمایش فاکتور به مشتری.\n\nلینک عمومی فرم را می‌توان برای تست به خریدار داد.",
+        "height": 200,
+        "width": 960,
+        "color": 4
+      },
+      "id": "note_form",
+      "name": "note_form",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -40,
+        -230
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 📊 گزارش روزانه (ساعت ۲۱)\nفاکتورهای امروز خوانده و جمع‌بندی و به تلگرام مالک ارسال می‌شوند.\n\n`chatId` نود ارسال را با آی‌دی عددی تلگرام خودتان جایگزین کنید.",
+        "height": 150,
+        "width": 960,
+        "color": 5
+      },
+      "id": "note_report",
+      "name": "note_report",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -40,
+        470
+      ]
+    }
+  ],
+  "connections": {
+    "Invoice Form": {
+      "main": [
+        [
+          {
+            "node": "Compute Invoice",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compute Invoice": {
+      "main": [
+        [
+          {
+            "node": "Archive Invoice",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Archive Invoice": {
+      "main": [
+        [
+          {
+            "node": "Show Invoice",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Daily 21:00": {
+      "main": [
+        [
+          {
+            "node": "Get Today Invoices",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Today Invoices": {
+      "main": [
+        [
+          {
+            "node": "Aggregate Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate Report": {
+      "main": [
+        [
+          {
+            "node": "Send Daily Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "tags": []
+}
