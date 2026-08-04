@@ -66,7 +66,8 @@ const AGG_JS =
   "const totalSum = rows.reduce((s, r) => s + Number(r.total || 0), 0);\n" +
   "const feeSum = rows.reduce((s, r) => s + Number(r.makingFee || 0) + Number(r.profit || 0), 0);\n" +
   "const day = rows[0]?.day || new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Tehran' });\n" +
-  "return [{ json: { day, count, totalSum, feeSum } }];";
+  "const ownerEmail = \"you@example.com\";\n" +
+  "return [{ json: { day, count, totalSum, feeSum, ownerEmail } }];";
 
 const invoiceForm = trigger({
   type: 'n8n-nodes-base.formTrigger',
@@ -311,7 +312,7 @@ const aggregateReport = node({
   type: 'n8n-nodes-base.code',
   version: 2,
   config: { name: 'Aggregate Report', parameters: { mode: 'runOnceForAllItems', language: 'javaScript', jsCode: AGG_JS } },
-  output: [{ day: '2026-08-04', count: 3, totalSum: 68000000, feeSum: 11000000 }],
+  output: [{ day: '2026-08-04', count: 3, totalSum: 68000000, feeSum: 11000000, ownerEmail: 'you@example.com' }],
 });
 
 const sendReport = node({
@@ -336,6 +337,33 @@ const sendReport = node({
   output: [{ ok: true }],
 });
 
+const emailReport = node({
+  type: 'n8n-nodes-base.gmail',
+  version: 2.2,
+  config: {
+    name: 'Email Daily Report',
+    onError: 'continueRegularOutput',
+    parameters: {
+      resource: 'message',
+      operation: 'send',
+      sendTo: expr('{{ $json.ownerEmail }}'),
+      subject: expr('گزارش فروش امروز ({{ $json.day }})'),
+      emailType: 'html',
+      message: expr(
+        "<div style='direction:rtl;font-family:Tahoma,Arial,sans-serif;font-size:14px'>" +
+        '📊 <b>گزارش فروش امروز {{ $json.day }}</b><br><br>' +
+        'تعداد فاکتور: {{ $json.count }}<br>' +
+        "جمع کل فروش: {{ $json.totalSum.toLocaleString('fa-IR') }} تومان<br>" +
+        "جمع اجرت + سود: {{ $json.feeSum.toLocaleString('fa-IR') }} تومان" +
+        '</div>'
+      ),
+      options: { appendAttribution: false },
+    },
+    credentials: { gmailOAuth2: newCredential('Gmail') },
+  },
+  output: [{ id: 'sent' }],
+});
+
 const noteForm = sticky(
   '## 🧾 صدور فاکتور\nفرم وب → (نرخ آنلاین یا دستی) → محاسبه و رندر فاکتور حرفه‌ای → آرشیو در Data Table + Google Sheet + ایمیل به مشتری → نمایش فاکتور.\n\nلینک عمومی فرم (path: gold-invoice) را برای تست به مشتری/خریدار بده.',
   [invoiceForm, computeInvoice, showInvoice],
@@ -356,6 +384,8 @@ export default workflow('invoice-making-fee-assistant', 'دستیار محاسب
   .add(computeInvoice).to(sendEmail)
   .add(computeInvoice).to(showInvoice)
   .add(dailyReport)
-  .to(getTodayInvoices.to(aggregateReport.to(sendReport)))
+  .to(getTodayInvoices.to(aggregateReport))
+  .add(aggregateReport).to(sendReport)
+  .add(aggregateReport).to(emailReport)
   .add(noteForm)
   .add(noteReport);

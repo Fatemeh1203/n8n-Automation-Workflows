@@ -633,7 +633,7 @@
       "parameters": {
         "mode": "runOnceForAllItems",
         "language": "javaScript",
-        "jsCode": "const rows = $input.all().map((i) => i.json);\nconst count = rows.length;\nconst totalSum = rows.reduce((s, r) => s + Number(r.total || 0), 0);\nconst feeSum = rows.reduce((s, r) => s + Number(r.makingFee || 0) + Number(r.profit || 0), 0);\nconst day = rows[0]?.day || new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Tehran' });\nreturn [{ json: { day, count, totalSum, feeSum } }];"
+        "jsCode": "const rows = $input.all().map((i) => i.json);\nconst count = rows.length;\nconst totalSum = rows.reduce((s, r) => s + Number(r.total || 0), 0);\nconst feeSum = rows.reduce((s, r) => s + Number(r.makingFee || 0) + Number(r.profit || 0), 0);\nconst day = rows[0]?.day || new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Tehran' });\nconst ownerEmail = \"you@example.com\";\nreturn [{ json: { day, count, totalSum, feeSum, ownerEmail } }];"
       },
       "id": "agg",
       "name": "Aggregate Report",
@@ -666,6 +666,34 @@
         "telegramApi": {
           "id": "REPLACE_WITH_TELEGRAM_CRED",
           "name": "Telegram Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "send",
+        "sendTo": "={{ $json.ownerEmail }}",
+        "subject": "=گزارش فروش امروز ({{ $json.day }})",
+        "emailType": "html",
+        "message": "=<div style='direction:rtl;font-family:Tahoma,Arial,sans-serif;font-size:14px'>📊 <b>گزارش فروش امروز {{ $json.day }}</b><br><br>تعداد فاکتور: {{ $json.count }}<br>جمع کل فروش: {{ $json.totalSum.toLocaleString('fa-IR') }} تومان<br>جمع اجرت + سود: {{ $json.feeSum.toLocaleString('fa-IR') }} تومان</div>",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "emailreport",
+      "name": "Email Daily Report",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        680,
+        680
+      ],
+      "onError": "continueRegularOutput",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "REPLACE_WITH_GMAIL_CRED",
+          "name": "Gmail"
         }
       }
     },
@@ -807,6 +835,11 @@
         [
           {
             "node": "Send Daily Report",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Email Daily Report",
             "type": "main",
             "index": 0
           }
