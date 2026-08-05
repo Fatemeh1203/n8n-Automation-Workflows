@@ -15,6 +15,8 @@
 
 ## 🗺️ Workflow Schematic | شماتیک ورک‌فلو
 
+![Workflow schematic — دستیار صدور فاکتور طلا](schematic.png)
+
 ```mermaid
 flowchart TD
   F["Invoice Form / فرم صدور فاکتور"] --> R{"Online rate? / نرخ آنلاین؟"}
