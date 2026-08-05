@@ -1,3 +1,4 @@
+<img width="1402" height="1122" alt="ChatGPT Image Aug 5, 2026, 02_10_26 PM" src="https://github.com/user-attachments/assets/32bf195c-b890-49bd-b4ba-2fee22a9a366" />
 ![n8n](https://img.shields.io/badge/n8n-EA4B71?logo=n8n&logoColor=white)
 ![telegram-bot](https://img.shields.io/badge/telegram--bot-26A5E4?logo=telegram&logoColor=white)
 ![ocr](https://img.shields.io/badge/ocr-4CAF50)
