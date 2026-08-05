@@ -1,3 +1,4 @@
+<img width="1254" height="1254" alt="ChatGPT Image Aug 5, 2026, 02_02_32 PM" src="https://github.com/user-attachments/assets/7b756063-0603-4ba6-a470-90dc4da074bc" />
 <div dir="rtl">
 
 # n8n-special-Arezou
