@@ -1,0 +1,1732 @@
+{
+  "name": "Daily Report & Task Assistant — دستیار گزارش روزانه و وظایف",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks",
+              "weeksInterval": 1,
+              "triggerAtDay": [
+                6,
+                0,
+                1,
+                2,
+                3
+              ],
+              "triggerAtHour": 8,
+              "triggerAtMinute": 30
+            }
+          ]
+        }
+      },
+      "id": "trg-morning",
+      "name": "☀️ Morning Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -260,
+        -40
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "weeks",
+              "weeksInterval": 1,
+              "triggerAtDay": [
+                6,
+                0,
+                1,
+                2,
+                3
+              ],
+              "triggerAtHour": 17,
+              "triggerAtMinute": 30
+            }
+          ]
+        }
+      },
+      "id": "trg-evening",
+      "name": "🌆 Evening Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -260,
+        180
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "months",
+              "monthsInterval": 1,
+              "triggerAtDayOfMonth": 1,
+              "triggerAtHour": 9,
+              "triggerAtMinute": 0
+            }
+          ]
+        }
+      },
+      "id": "trg-monthly",
+      "name": "📅 Monthly Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -260,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "id": "trg-telegram",
+      "name": "💬 Telegram Trigger",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.5,
+      "position": [
+        -700,
+        800
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "sheet",
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "",
+          "cachedResultName": "Daily Report Assistant"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Tasks"
+        },
+        "options": {}
+      },
+      "id": "📥 Fetch Tasks (Morning)",
+      "name": "📥 Fetch Tasks (Morning)",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -20,
+        -40
+      ],
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "/* ══════════════════════════════════════════════════════════════════════\n *  CONFIG  —  فقط این بخش را ویرایش کنید / Edit only this block\n * ══════════════════════════════════════════════════════════════════════ */\nconst CFG = {\n  chatId:   '<<TELEGRAM_CHAT_ID>>',  // آی‌دی چت مقصد / target chat id\n  lang:     'fa',                    // 'fa' | 'en'\n  tz:       'Asia/Tehran',           // منطقه زمانی / IANA timezone\n  maxTasks: 15,                      // حداکثر کار در پیام / max tasks in message\n  showJalali: true,                  // نمایش تاریخ شمسی / show Persian date\n};\n/* ══════════════════════════════════════════════════════════════════════ */\n\nconst OPEN = ['todo', 'doing', 'blocked', 'in progress', ''];\nconst PRIO = { high: 0, بالا: 0, urgent: 0, med: 1, medium: 1, متوسط: 1, low: 2, پایین: 2, '': 1 };\n\nconst L = {\n  fa: {\n    hi: '☀️ <b>صبح بخیر!</b>',\n    none: 'هیچ کار بازی برای امروز ثبت نشده. با <code>/task عنوان کار</code> کار جدید اضافه کن.',\n    open: 'کار باز',\n    overdue: '⚠️ عقب‌افتاده',\n    today: '🎯 امروز',\n    later: '🗓 بعداً',\n    footer: 'با <code>/done شماره</code> کار را ببند · <code>/task</code> برای افزودن · <code>/help</code> راهنما',\n    more: 'و %d مورد دیگر…',\n    p: { 0: '🔴', 1: '🟡', 2: '⚪️' },\n  },\n  en: {\n    hi: '☀️ <b>Good morning!</b>',\n    none: 'No open tasks for today. Add one with <code>/task your task</code>.',\n    open: 'open task(s)',\n    overdue: '⚠️ Overdue',\n    today: '🎯 Today',\n    later: '🗓 Later',\n    footer: 'Close with <code>/done number</code> · <code>/task</code> to add · <code>/help</code>',\n    more: 'and %d more…',\n    p: { 0: '🔴', 1: '🟡', 2: '⚪️' },\n  },\n};\nconst t = L[CFG.lang] || L.en;\n\nconst esc = (s) => String(s == null ? '' : s)\n  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\n\n// «چهارشنبه ۱۴ مرداد ۱۴۰۵» — اجزا را دستی می‌چینیم چون Intl ترتیب را جابه‌جا می‌دهد\n// Assemble the parts manually; Intl emits them in an awkward order here.\nconst jalali = (iso) => {\n  if (!CFG.showJalali) return '';\n  try {\n    const p = new Intl.DateTimeFormat('fa-IR-u-ca-persian', {\n      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', timeZone: CFG.tz,\n    }).formatToParts(new Date(iso + 'T09:00:00'));\n    const g = (type) => (p.find((x) => x.type === type) || {}).value || '';\n    const [wd, d, m, y] = [g('weekday'), g('day'), g('month'), g('year')];\n    return d && m && y ? `${wd ? wd + ' ' : ''}${d} ${m} ${y}` : '';\n  } catch (e) { return ''; }\n};\n\nconst now   = $now.setZone(CFG.tz);\nconst today = now.toISODate();\n\n// خواندن ردیف‌ها؛ اگر شیت خالی باشد آرایه خالی است / read rows, empty-safe\nconst rows = $input.all()\n  .map((i) => i.json || {})\n  .filter((r) => String(r.task || '').trim() !== '');\n\nconst openRows = rows.filter((r) => OPEN.includes(String(r.status || '').trim().toLowerCase()));\n\n// دسته‌بندی بر اساس سررسید / bucket by due date\nconst overdue = [], due = [], later = [];\nfor (const r of openRows) {\n  const d = String(r.due || '').trim().slice(0, 10);\n  if (d && d < today) overdue.push(r);\n  else if (!d || d === today) due.push(r);\n  else later.push(r);\n}\n\nconst byPrio = (a, b) => {\n  const pa = PRIO[String(a.priority || '').trim().toLowerCase()] ?? 1;\n  const pb = PRIO[String(b.priority || '').trim().toLowerCase()] ?? 1;\n  return pa - pb;\n};\noverdue.sort(byPrio); due.sort(byPrio); later.sort(byPrio);\n\n// شماره‌گذاری پایدار در کل پیام / stable numbering across the whole message\nlet n = 0;\nconst line = (r) => {\n  n += 1;\n  const p = PRIO[String(r.priority || '').trim().toLowerCase()] ?? 1;\n  const tags = String(r.tags || '').trim();\n  return `${n}. ${t.p[p]} ${esc(r.task)}${tags ? ` <i>#${esc(tags.replace(/[\\s,]+/g, ' #'))}</i>` : ''}`;\n};\n\nconst section = (title, list) => (list.length ? [`\\n<b>${title}</b>`, ...list.map(line)] : []);\n\nconst parts = [t.hi];\nconst jd = jalali(today);\nparts.push(`<i>${jd ? esc(jd) + ' · ' : ''}${today}</i>`);\n\nconst total = overdue.length + due.length + later.length;\nif (total === 0) {\n  parts.push('\\n' + t.none);\n} else {\n  parts.push(`\\n📌 <b>${total}</b> ${t.open}`);\n  const shown = [...section(t.overdue, overdue), ...section(t.today, due), ...section(t.later, later)];\n  // برش امن روی سقف تعیین‌شده / trim safely to the configured cap\n  let count = 0, out = [];\n  for (const l of shown) {\n    if (/^\\d+\\./.test(l)) { if (count >= CFG.maxTasks) continue; count += 1; }\n    out.push(l);\n  }\n  parts.push(...out);\n  if (total > CFG.maxTasks) parts.push('\\n' + t.more.replace('%d', String(total - CFG.maxTasks)));\n}\nparts.push(`\\n———\\n${t.footer}`);\n\nreturn [{\n  json: {\n    chatId: CFG.chatId,\n    message: parts.join('\\n'),\n    date: today,\n    stats: { total, overdue: overdue.length, today: due.length, later: later.length },\n  },\n}];\n"
+      },
+      "id": "🧠 Build Morning Message",
+      "name": "🧠 Build Morning Message",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        -40
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "={{ $json.chatId }}",
+        "text": "={{ $json.message }}",
+        "replyMarkup": "none",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML",
+          "disable_web_page_preview": true
+        }
+      },
+      "id": "📤 Send Morning Reminder",
+      "name": "📤 Send Morning Reminder",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        460,
+        -40
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "parameters": {
+        "resource": "sheet",
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "",
+          "cachedResultName": "Daily Report Assistant"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Tasks"
+        },
+        "options": {}
+      },
+      "id": "📥 Fetch Tasks (Evening)",
+      "name": "📥 Fetch Tasks (Evening)",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -20,
+        180
+      ],
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "/* ══════════════════════════════════════════════════════════════════════\n *  CONFIG  —  فقط این بخش را ویرایش کنید / Edit only this block\n * ══════════════════════════════════════════════════════════════════════ */\nconst CFG = {\n  chatId: '<<TELEGRAM_CHAT_ID>>',\n  lang:   'fa',\n  tz:     'Asia/Tehran',\n};\n/* ══════════════════════════════════════════════════════════════════════ */\n\nconst DONE = ['done', 'completed', 'انجام شد', 'تمام'];\n\nconst L = {\n  fa: {\n    hi: '🌆 <b>وقت گزارش روزانه</b>',\n    doneToday: '✅ امروز بستی',\n    stillOpen: '⏳ هنوز باز',\n    ask: 'در یک پیام بنویس امروز چه کردی. هر خط = یک مورد.',\n    hint: 'اختیاری در انتهای پیام: <code>ساعت: 6.5</code> · <code>حال: خوب</code> · <code>#تگ</code>',\n    example: '<i>مثال:\\nجلسه با تیم فروش\\nرفع باگ لاگین\\nساعت: 7 حال: خوب #بک‌اند</i>',\n    skip: 'اگر امروز مرخصی بودی بنویس: <code>/off</code>',\n  },\n  en: {\n    hi: '🌆 <b>Daily report time</b>',\n    doneToday: '✅ Closed today',\n    stillOpen: '⏳ Still open',\n    ask: 'Reply in one message with what you did today. One line = one item.',\n    hint: 'Optional at the end: <code>hours: 6.5</code> · <code>mood: good</code> · <code>#tag</code>',\n    example: '<i>Example:\\nSales team sync\\nFixed login bug\\nhours: 7 mood: good #backend</i>',\n    skip: 'Day off? Just send: <code>/off</code>',\n  },\n};\nconst t = L[CFG.lang] || L.en;\n\nconst esc = (s) => String(s == null ? '' : s)\n  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\n\nconst now   = $now.setZone(CFG.tz);\nconst today = now.toISODate();\n\nconst rows = $input.all()\n  .map((i) => i.json || {})\n  .filter((r) => String(r.task || '').trim() !== '');\n\nconst isDone = (r) => DONE.includes(String(r.status || '').trim().toLowerCase());\n\nconst closedToday = rows.filter((r) => isDone(r) && String(r.done_at || '').slice(0, 10) === today);\nconst stillOpen   = rows.filter((r) => !isDone(r));\n\nconst parts = [t.hi, `<i>${today}</i>`];\n\nif (closedToday.length) {\n  parts.push(`\\n<b>${t.doneToday} (${closedToday.length})</b>`);\n  parts.push(...closedToday.slice(0, 10).map((r) => `• ${esc(r.task)}`));\n}\nif (stillOpen.length) {\n  parts.push(`\\n<b>${t.stillOpen} (${stillOpen.length})</b>`);\n  parts.push(...stillOpen.slice(0, 10).map((r) => `• ${esc(r.task)}`));\n}\n\nparts.push(`\\n———\\n${t.ask}`);\nparts.push(t.hint);\nparts.push('\\n' + t.example);\nparts.push('\\n' + t.skip);\n\nreturn [{\n  json: {\n    chatId: CFG.chatId,\n    message: parts.join('\\n'),\n    date: today,\n    prefilledDone: closedToday.length,\n  },\n}];\n"
+      },
+      "id": "🧠 Build Evening Prompt",
+      "name": "🧠 Build Evening Prompt",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        180
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "={{ $json.chatId }}",
+        "text": "={{ $json.message }}",
+        "replyMarkup": "forceReply",
+        "forceReply": {
+          "force_reply": true
+        },
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML",
+          "disable_web_page_preview": true
+        }
+      },
+      "id": "📤 Ask For Daily Report",
+      "name": "📤 Ask For Daily Report",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        460,
+        180
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "parameters": {
+        "resource": "sheet",
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "",
+          "cachedResultName": "Daily Report Assistant"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Reports"
+        },
+        "options": {}
+      },
+      "id": "📚 Read Report Archive",
+      "name": "📚 Read Report Archive",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -20,
+        400
+      ],
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "/* ══════════════════════════════════════════════════════════════════════\n *  📊 MONTHLY ROLL-UP\n *  آرشیو گزارش‌های ماه گذشته را به یک سند ارزیابی عملکرد تبدیل می‌کند.\n *  Turns last month's archive into a performance-review document.\n * ══════════════════════════════════════════════════════════════════════ */\nconst CFG = {\n  chatId:     '<<TELEGRAM_CHAT_ID>>',\n  lang:       'fa',\n  tz:         'Asia/Tehran',\n  workdays:   [6, 0, 1, 2, 3],  // شنبه..چهارشنبه / Sat..Wed (0=Sun … 6=Sat)\n  topTags:    6,\n  highlights: 8,\n};\n/* ══════════════════════════════════════════════════════════════════════ */\n\nconst L = {\n  fa: {\n    title: '📊 <b>گزارش ماهانهٔ عملکرد</b>',\n    none: 'برای ماه گذشته هیچ گزارشی در آرشیو نیست.',\n    days: 'روز گزارش‌شده', cover: 'پوشش', tasks: 'کار انجام‌شده',\n    hours: 'ساعت کارکرد', avg: 'میانگین روزانه', streak: 'بیشترین روز پیاپی',\n    off: 'روز مرخصی', tags: '🏷 <b>حوزه‌های کاری</b>', hl: '⭐️ <b>مهم‌ترین دستاوردها</b>',\n    best: '🏆 <b>پرکارترین روز</b>', foot: 'این متن را مستقیم در جلسهٔ ارزیابی عملکرد استفاده کن. آرشیو کامل در گوگل‌شیت است.',\n    mon: ['ژانویه','فوریه','مارس','آوریل','مه','ژوئن','ژوئیه','اوت','سپتامبر','اکتبر','نوامبر','دسامبر'],\n  },\n  en: {\n    title: '📊 <b>Monthly performance report</b>',\n    none: 'No reports archived for last month.',\n    days: 'days reported', cover: 'coverage', tasks: 'tasks completed',\n    hours: 'hours logged', avg: 'daily average', streak: 'longest streak',\n    off: 'days off', tags: '🏷 <b>Focus areas</b>', hl: '⭐️ <b>Highlights</b>',\n    best: '🏆 <b>Most productive day</b>', foot: 'Paste this straight into your performance review. Full archive lives in Google Sheets.',\n    mon: ['January','February','March','April','May','June','July','August','September','October','November','December'],\n  },\n};\nconst t = L[CFG.lang] || L.en;\n\nconst esc = (s) => String(s == null ? '' : s)\n  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\n\nconst now  = $now.setZone(CFG.tz);\nconst last = now.minus({ months: 1 });\nconst from = last.startOf('month').toISODate();\nconst to   = last.endOf('month').toISODate();\n\n// «تیر ۱۴۰۵» — ترتیب ماه/سال را دستی می‌چینیم چون Intl معکوس می‌دهد\n// Build \"month year\" manually; Intl emits the parts in the reverse order here.\nconst jalaliMonth = (() => {\n  try {\n    const p = new Intl.DateTimeFormat('fa-IR-u-ca-persian-nu-latn', {\n      year: 'numeric', month: 'long', timeZone: CFG.tz,\n    }).formatToParts(new Date(from + 'T12:00:00'));\n    const g = (type) => (p.find((x) => x.type === type) || {}).value || '';\n    const m = g('month'), y = g('year');\n    return m && y ? `${m} ${y}` : '';\n  } catch (e) { return ''; }\n})();\n\nconst rows = $input.all()\n  .map((i) => i.json || {})\n  .filter((r) => {\n    const d = String(r.date || '').slice(0, 10);\n    return d >= from && d <= to;\n  })\n  .sort((a, b) => String(a.date).localeCompare(String(b.date)));\n\nconst header = `${t.title}\\n<i>${jalaliMonth ? esc(jalaliMonth) + ' · ' : ''}${t.mon[last.month - 1]} ${last.year} (${from} → ${to})</i>`;\n\nif (!rows.length) {\n  return [{ json: { chatId: CFG.chatId, message: `${header}\\n\\n${t.none}`, period: { from, to }, empty: true } }];\n}\n\nconst offDays  = rows.filter((r) => String(r.mood || '').toLowerCase() === 'off' || String(r.report || '') === 'OFF');\nconst workRows = rows.filter((r) => !offDays.includes(r));\n\nconst num = (v) => { const n = Number(v); return Number.isFinite(n) ? n : 0; };\nconst totalTasks = workRows.reduce((s, r) => s + num(r.done_count), 0);\nconst totalHours = workRows.reduce((s, r) => s + num(r.hours), 0);\n\n// روزهای کاری ماه گذشته / expected workdays in the period\nconst isWorkday = (iso) => {\n  const dt = last.set({ day: Number(String(iso).slice(8, 10)) });\n  return CFG.workdays.includes(dt.weekday % 7);\n};\nlet expected = 0;\nfor (let d = last.startOf('month'); d <= last.endOf('month'); d = d.plus({ days: 1 })) {\n  if (CFG.workdays.includes(d.weekday % 7)) expected += 1;\n}\n// پوشش = روزهای کاریِ گزارش‌شده ÷ روزهای کاری ماه (گزارش‌های تعطیلات پوشش را از ۱۰۰٪ رد نمی‌کنند)\n// Coverage counts reports on workdays only, so weekend reports can't push it past 100%.\nconst reportedWorkdays = rows.filter((r) => isWorkday(r.date)).length;\nconst coverage = expected ? Math.min(100, Math.round((reportedWorkdays / expected) * 100)) : 0;\n\n// طولانی‌ترین زنجیرهٔ روزهای پیاپی / longest consecutive-day streak\nlet streak = 0, run = 0, prev = null;\nfor (const r of rows) {\n  const d = String(r.date).slice(0, 10);\n  run = (prev && new Date(d) - new Date(prev) === 86400000) ? run + 1 : 1;\n  streak = Math.max(streak, run);\n  prev = d;\n}\n\n// تگ‌های پرتکرار / most frequent tags\nconst tagCount = {};\nfor (const r of rows) {\n  String(r.tags || '').split(/[,\\s]+/).filter(Boolean)\n    .forEach((tg) => { tagCount[tg] = (tagCount[tg] || 0) + 1; });\n}\nconst topTags = Object.entries(tagCount).sort((a, b) => b[1] - a[1]).slice(0, CFG.topTags);\n\n// پرکارترین روز / best day\nconst best = workRows.slice().sort((a, b) => num(b.done_count) - num(a.done_count))[0];\n\n// دستاوردهای شاخص: بلندترین خطوط از پرکارترین روزها / highlights\nconst highlights = [];\nfor (const r of workRows.slice().sort((a, b) => num(b.done_count) - num(a.done_count))) {\n  for (const line of String(r.report || '').split(/\\r?\\n/).map((l) => l.trim()).filter(Boolean)) {\n    if (line.length >= 12 && !highlights.some((h) => h.line === line)) {\n      highlights.push({ line, date: String(r.date).slice(0, 10) });\n    }\n    if (highlights.length >= CFG.highlights) break;\n  }\n  if (highlights.length >= CFG.highlights) break;\n}\n\nconst parts = [header, ''];\nparts.push(`📅 <b>${rows.length}</b> ${t.days} · ${t.cover} <b>${coverage}%</b>`);\nparts.push(`✅ <b>${totalTasks}</b> ${t.tasks}`);\nif (totalHours > 0) {\n  parts.push(`⏱ <b>${Math.round(totalHours * 10) / 10}</b> ${t.hours} · ${t.avg} <b>${(totalHours / (workRows.length || 1)).toFixed(1)}</b>`);\n}\nparts.push(`🔥 ${t.streak}: <b>${streak}</b>`);\nif (offDays.length) parts.push(`🌴 <b>${offDays.length}</b> ${t.off}`);\n\nif (best) {\n  parts.push(`\\n${t.best}`);\n  parts.push(`<code>${String(best.date).slice(0, 10)}</code> — ${num(best.done_count)} ${t.tasks}`);\n}\nif (topTags.length) {\n  parts.push(`\\n${t.tags}`);\n  parts.push(topTags.map(([k, v]) => `#${esc(k)} <b>${v}</b>`).join(' · '));\n}\nif (highlights.length) {\n  parts.push(`\\n${t.hl}`);\n  parts.push(...highlights.map((h) => `• ${esc(h.line)} <i>(${h.date})</i>`));\n}\nparts.push(`\\n———\\n<i>${t.foot}</i>`);\n\nreturn [{\n  json: {\n    chatId: CFG.chatId,\n    message: parts.join('\\n'),\n    period: { from, to },\n    empty: false,\n    metrics: {\n      daysReported: rows.length, reportedWorkdays, expectedWorkdays: expected, coverage,\n      tasksCompleted: totalTasks, hoursLogged: Math.round(totalHours * 10) / 10,\n      longestStreak: streak, daysOff: offDays.length,\n      topTags: topTags.map(([k, v]) => ({ tag: k, count: v })),\n    },\n  },\n}];\n"
+      },
+      "id": "📊 Build Monthly Summary",
+      "name": "📊 Build Monthly Summary",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        220,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "={{ $json.chatId }}",
+        "text": "={{ $json.message }}",
+        "replyMarkup": "none",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML",
+          "disable_web_page_preview": true
+        }
+      },
+      "id": "📤 Send Monthly Report",
+      "name": "📤 Send Monthly Report",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        460,
+        400
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "/* ══════════════════════════════════════════════════════════════════════\n *  🔀 NORMALIZE INPUT  —  تنها نقطهٔ وابسته به کانال ورودی\n *  THE ONLY CHANNEL-DEPENDENT NODE.\n *\n *  برای تعویض تلگرام با فرم وب / واتساپ / ایمیل / بله / وبهوک:\n *  فقط نود تریگر قبلی و بلوک SOURCE پایین را عوض کنید. بقیهٔ ورک‌فلو\n *  دست‌نخورده کار می‌کند، چون همه‌چیز فقط این خروجی را می‌بیند:\n *\n *  To swap Telegram for a Web Form / WhatsApp / Email / Webhook:\n *  replace the trigger node and the SOURCE block below. The rest of the\n *  workflow is untouched — it only ever sees this contract:\n *\n *    { source, userId, userName, chatId, text, messageId, receivedAt }\n * ══════════════════════════════════════════════════════════════════════ */\n\n/* ══════════════════════════════════════════════════════════════════════\n *  CONFIG\n * ══════════════════════════════════════════════════════════════════════ */\nconst CFG = {\n  // فهرست سفید — خالی یعنی همه مجازند (برای تست) / allowlist, empty = allow all\n  allowedUserIds: [],           // e.g. [123456789]\n  tz: 'Asia/Tehran',\n};\n/* ══════════════════════════════════════════════════════════════════════ */\n\nconst src = $json;\n\n/* ─────────── SOURCE: TELEGRAM (فعال / active) ─────────── */\nconst msg = src.message || src.edited_message || {};\nconst out = {\n  source:    'telegram',\n  userId:    String(msg.from?.id ?? ''),\n  userName:  String(msg.from?.username || msg.from?.first_name || ''),\n  chatId:    String(msg.chat?.id ?? ''),\n  text:      String(msg.text || msg.caption || '').trim(),\n  messageId: msg.message_id ?? null,\n};\n\n/* ─────────── SOURCE: WEB FORM (n8n Form Trigger) ───────────\nconst out = {\n  source:    'form',\n  userId:    String(src['Employee ID'] || ''),\n  userName:  String(src['Name'] || ''),\n  chatId:    String(src['Employee ID'] || ''),\n  text:      String(src['Report'] || ''),\n  messageId: null,\n};\n─────────────────────────────────────────────────────────── */\n\n/* ─────────── SOURCE: WEBHOOK / BALE / EITAA / WHATSAPP ───────────\nconst b = src.body || src;\nconst out = {\n  source:    'webhook',\n  userId:    String(b.from || b.sender || ''),\n  userName:  String(b.name || ''),\n  chatId:    String(b.chat_id || b.from || ''),\n  text:      String(b.text || b.message || ''),\n  messageId: b.id ?? null,\n};\n──────────────────────────────────────────────────────────────── */\n\n/* ─────────── SOURCE: EMAIL (IMAP Trigger) ───────────\nconst out = {\n  source:    'email',\n  userId:    String(src.from || ''),\n  userName:  String(src.from || ''),\n  chatId:    String(src.from || ''),\n  text:      String(src.textPlain || src.text || ''),\n  messageId: src.messageId ?? null,\n};\n──────────────────────────────────────────────────── */\n\nout.receivedAt  = $now.setZone(CFG.tz).toISO();\nout.date        = $now.setZone(CFG.tz).toISODate();\nout.authorized  = CFG.allowedUserIds.length === 0\n  || CFG.allowedUserIds.map(String).includes(out.userId);\n\n// دستور را از متن جدا کن / extract the leading command\nconst m = out.text.match(/^([\\/+])([a-zA-Z؀-ۿ]*)\\s*([\\s\\S]*)$/);\nout.command = m ? (m[1] === '+' ? 'task' : (m[2] || '').toLowerCase()) : '';\nout.args    = m ? String(m[3] || '').trim() : out.text;\n\nreturn { json: out };\n"
+      },
+      "id": "🔀 Normalize Input",
+      "name": "🔀 Normalize Input",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -460,
+        800
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "🛡 Authorized?-c1",
+              "leftValue": "={{ $json.authorized }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "id": "🛡 Authorized?",
+      "name": "🛡 Authorized?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -220,
+        800
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "rules",
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "rt-task",
+                    "leftValue": "={{ $json.command }}",
+                    "rightValue": "task",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "task"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "rt-done",
+                    "leftValue": "={{ $json.command }}",
+                    "rightValue": "done",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "done"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "rt-list",
+                    "leftValue": "={{ $json.command }}",
+                    "rightValue": "list",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "list"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "rt-help",
+                    "leftValue": "={{ $json.command }}",
+                    "rightValue": "help",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "help"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra",
+          "renameFallbackOutput": "report",
+          "ignoreCase": true,
+          "looseTypeValidation": true
+        }
+      },
+      "id": "route",
+      "name": "🧭 Route Command",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        20,
+        800
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "/* ══════════════════════════════════════════════════════════════════════\n *  🧾 PARSE TASK  —  «/task عنوان !بالا @1404-05-20 #تگ» را به ردیف شیت تبدیل می‌کند\n *  Turns \"/task title !high @2026-08-20 #tag\" into a sheet row.\n * ══════════════════════════════════════════════════════════════════════ */\nconst CFG = { lang: 'fa', tz: 'Asia/Tehran' };\n\nconst PRIO_MAP = {\n  high: 'high', h: 'high', بالا: 'high', فوری: 'high', urgent: 'high', '!': 'high',\n  med: 'med', m: 'med', medium: 'med', متوسط: 'med',\n  low: 'low', l: 'low', پایین: 'low', کم: 'low',\n};\n\nconst L = {\n  fa: { ok: '✅ ثبت شد', empty: '⚠️ عنوان کار خالی است. مثال: <code>/task تماس با مشتری !بالا @2026-08-10 #فروش</code>' },\n  en: { ok: '✅ Task added', empty: '⚠️ Empty task. Example: <code>/task call client !high @2026-08-10 #sales</code>' },\n};\nconst t = L[CFG.lang] || L.en;\n\nconst esc = (s) => String(s == null ? '' : s)\n  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\n\nconst inp  = $json;\nconst now  = $now.setZone(CFG.tz);\nlet text   = String(inp.args || '').trim();\n\n// !اولویت  /  !priority\nlet priority = 'med';\ntext = text.replace(/(^|\\s)!([^\\s]+)/g, (_, sp, v) => {\n  const p = PRIO_MAP[String(v).toLowerCase()];\n  if (p) { priority = p; return sp; }\n  return _;\n}).trim();\n\n// @سررسید ISO  /  @due date\nlet due = '';\ntext = text.replace(/(^|\\s)@(\\d{4}-\\d{2}-\\d{2})/g, (_, sp, v) => { due = v; return sp; }).trim();\n\n// #تگ‌ها  /  #tags\nconst tags = [];\ntext = text.replace(/(^|\\s)#([^\\s#]+)/g, (_, sp, v) => { tags.push(v); return sp; }).trim();\n\ntext = text.replace(/\\s{2,}/g, ' ').trim();\n\nif (!text) {\n  return { json: { chatId: inp.chatId, ok: false, message: t.empty } };\n}\n\nconst id = `T-${now.toFormat('yyyyLLdd')}-${String(now.toMillis()).slice(-5)}`;\n\nconst row = {\n  id,\n  date:       now.toISODate(),\n  task:       text,\n  priority,\n  status:     'todo',\n  tags:       tags.join(','),\n  due,\n  owner:      inp.userName || inp.userId || '',\n  created_at: now.toISO(),\n  done_at:    '',\n};\n\nconst detail = [\n  `<b>${esc(text)}</b>`,\n  `اولویت / priority: <code>${priority}</code>`,\n  due  ? `سررسید / due: <code>${due}</code>` : '',\n  tags.length ? `#${tags.map(esc).join(' #')}` : '',\n  `<code>${id}</code>`,\n].filter(Boolean).join('\\n');\n\nreturn { json: { ...row, chatId: inp.chatId, ok: true, message: `${t.ok}\\n\\n${detail}` } };\n"
+      },
+      "id": "🧾 Parse Task",
+      "name": "🧾 Parse Task",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        280,
+        460
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "✔️ Task Valid?-c1",
+              "leftValue": "={{ $json.ok }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "id": "✔️ Task Valid?",
+      "name": "✔️ Task Valid?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        520,
+        460
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "sheet",
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "",
+          "cachedResultName": "Daily Report Assistant"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Tasks"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "={{ $json.id }}",
+            "date": "={{ $json.date }}",
+            "task": "={{ $json.task }}",
+            "priority": "={{ $json.priority }}",
+            "status": "={{ $json.status }}",
+            "tags": "={{ $json.tags }}",
+            "due": "={{ $json.due }}",
+            "owner": "={{ $json.owner }}",
+            "created_at": "={{ $json.created_at }}",
+            "done_at": "={{ $json.done_at }}"
+          },
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "date",
+              "displayName": "date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "task",
+              "displayName": "task",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "priority",
+              "displayName": "priority",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "tags",
+              "displayName": "tags",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "due",
+              "displayName": "due",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "owner",
+              "displayName": "owner",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "done_at",
+              "displayName": "done_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {
+          "useAppend": true
+        }
+      },
+      "id": "➕ Append Task",
+      "name": "➕ Append Task",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        760,
+        400
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "={{ $('🔀 Normalize Input').first().json.chatId }}",
+        "text": "={{ $('🧾 Parse Task').first().json.message }}",
+        "replyMarkup": "none",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML",
+          "disable_web_page_preview": true
+        }
+      },
+      "id": "✅ Confirm Task",
+      "name": "✅ Confirm Task",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1000,
+        400
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "parameters": {
+        "resource": "sheet",
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "",
+          "cachedResultName": "Daily Report Assistant"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Tasks"
+        },
+        "options": {}
+      },
+      "id": "📥 Fetch Tasks (Inbound)",
+      "name": "📥 Fetch Tasks (Inbound)",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        280,
+        720
+      ],
+      "alwaysOutputData": true,
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "🔀 Done or List?-c1",
+              "leftValue": "={{ $('🔀 Normalize Input').first().json.command }}",
+              "rightValue": "done",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "id": "🔀 Done or List?",
+      "name": "🔀 Done or List?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        520,
+        720
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "/* ══════════════════════════════════════════════════════════════════════\n *  🎯 RESOLVE TASK TO CLOSE\n *  «/done 3» یا «/done بخشی از عنوان» را به ردیف دقیق شیت نگاشت می‌کند.\n *  Maps \"/done 3\" or \"/done part of title\" onto the exact sheet row.\n *  ورودی: ردیف‌های شیت Tasks / Input: rows of the Tasks sheet\n * ══════════════════════════════════════════════════════════════════════ */\nconst CFG = { lang: 'fa', tz: 'Asia/Tehran' };\n\nconst OPEN = ['todo', 'doing', 'blocked', 'in progress', ''];\nconst PRIO = { high: 0, بالا: 0, urgent: 0, med: 1, medium: 1, متوسط: 1, low: 2, پایین: 2, '': 1 };\n\nconst L = {\n  fa: {\n    ok: '✅ <b>بسته شد</b>', left: 'کار باز باقی مانده',\n    nf: '🤔 کاری با این مشخصات پیدا نشد. با <code>/list</code> شماره‌ها را ببین.',\n    amb: '🤔 چند کار با این عبارت هست، دقیق‌تر بگو:',\n    usage: 'استفاده: <code>/done 3</code> یا <code>/done بخشی از عنوان</code>',\n  },\n  en: {\n    ok: '✅ <b>Marked done</b>', left: 'task(s) still open',\n    nf: '🤔 No matching task. Use <code>/list</code> to see the numbers.',\n    amb: '🤔 Several tasks match — be more specific:',\n    usage: 'Usage: <code>/done 3</code> or <code>/done part of title</code>',\n  },\n};\nconst t = L[CFG.lang] || L.en;\n\nconst esc = (s) => String(s == null ? '' : s)\n  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\n\nconst inp   = $('🔀 Normalize Input').first().json;\nconst now   = $now.setZone(CFG.tz);\nconst today = now.toISODate();\nconst q     = String(inp.args || '').trim();\n\nconst rows = $input.all()\n  .map((i) => i.json || {})\n  .filter((r) => String(r.task || '').trim() !== '');\n\n// همان ترتیبی که در پیام صبح شماره‌گذاری شد / same ordering as the morning message\nconst open = rows\n  .filter((r) => OPEN.includes(String(r.status || '').trim().toLowerCase()))\n  .map((r) => {\n    const d = String(r.due || '').trim().slice(0, 10);\n    return { r, bucket: d && d < today ? 0 : (!d || d === today ? 1 : 2),\n             prio: PRIO[String(r.priority || '').trim().toLowerCase()] ?? 1 };\n  })\n  .sort((a, b) => a.bucket - b.bucket || a.prio - b.prio)\n  .map((x) => x.r);\n\nconst fail = (message) => [{ json: { chatId: inp.chatId, ok: false, message } }];\n\nif (!q) return fail(`${t.nf}\\n${t.usage}`);\n\nlet hit = null;\nif (/^\\d+$/.test(q)) {\n  hit = open[Number(q) - 1] || null;\n} else {\n  const needle = q.toLowerCase();\n  const matches = open.filter((r) => String(r.task || '').toLowerCase().includes(needle));\n  if (matches.length === 1) hit = matches[0];\n  else if (matches.length > 1) {\n    return fail(`${t.amb}\\n` + matches.slice(0, 8)\n      .map((r) => `• ${esc(r.task)}`).join('\\n'));\n  }\n}\n\nif (!hit) return fail(t.nf);\n\nconst remaining = open.length - 1;\n\nreturn [{\n  json: {\n    id:      hit.id,\n    task:    hit.task,\n    status:  'done',\n    done_at: now.toISO(),\n    chatId:  inp.chatId,\n    ok:      true,\n    message: `${t.ok}\\n\\n• ${esc(hit.task)}\\n\\n📌 ${remaining} ${t.left}`,\n  },\n}];\n"
+      },
+      "id": "🎯 Resolve Task to Close",
+      "name": "🎯 Resolve Task to Close",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        760,
+        640
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "✔️ Found Task?-c1",
+              "leftValue": "={{ $json.ok }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "id": "✔️ Found Task?",
+      "name": "✔️ Found Task?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1000,
+        640
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "sheet",
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "",
+          "cachedResultName": "Daily Report Assistant"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Tasks"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "={{ $json.id }}",
+            "status": "={{ $json.status }}",
+            "done_at": "={{ $json.done_at }}"
+          },
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "date",
+              "displayName": "date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "task",
+              "displayName": "task",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "priority",
+              "displayName": "priority",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "tags",
+              "displayName": "tags",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "due",
+              "displayName": "due",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "owner",
+              "displayName": "owner",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "done_at",
+              "displayName": "done_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "matchingColumns": [
+            "id"
+          ]
+        },
+        "options": {}
+      },
+      "id": "✔️ Mark Task Done",
+      "name": "✔️ Mark Task Done",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1240,
+        600
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "={{ $('🔀 Normalize Input').first().json.chatId }}",
+        "text": "={{ $('🎯 Resolve Task to Close').first().json.message }}",
+        "replyMarkup": "none",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML",
+          "disable_web_page_preview": true
+        }
+      },
+      "id": "✅ Confirm Done",
+      "name": "✅ Confirm Done",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1480,
+        600
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "/* ══════════════════════════════════════════════════════════════════════\n *  📋 BUILD TASK LIST  —  پاسخ به /list\n *  شماره‌ها دقیقاً همان شماره‌های /done هستند.\n *  Numbering matches /done exactly.\n * ══════════════════════════════════════════════════════════════════════ */\nconst CFG = { lang: 'fa', tz: 'Asia/Tehran', max: 25 };\n\nconst OPEN = ['todo', 'doing', 'blocked', 'in progress', ''];\nconst PRIO = { high: 0, بالا: 0, urgent: 0, med: 1, medium: 1, متوسط: 1, low: 2, پایین: 2, '': 1 };\nconst ICON = { 0: '🔴', 1: '🟡', 2: '⚪️' };\n\nconst L = {\n  fa: { title: '📋 <b>کارهای باز</b>', none: 'هیچ کار بازی نداری. 🎉', hint: 'برای بستن: <code>/done شماره</code>', od: 'عقب‌افتاده' },\n  en: { title: '📋 <b>Open tasks</b>', none: 'No open tasks. 🎉', hint: 'To close: <code>/done number</code>', od: 'overdue' },\n};\nconst t = L[CFG.lang] || L.en;\n\nconst esc = (s) => String(s == null ? '' : s)\n  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\n\nconst inp   = $('🔀 Normalize Input').first().json;\nconst today = $now.setZone(CFG.tz).toISODate();\n\nconst rows = $input.all()\n  .map((i) => i.json || {})\n  .filter((r) => String(r.task || '').trim() !== '');\n\nconst open = rows\n  .filter((r) => OPEN.includes(String(r.status || '').trim().toLowerCase()))\n  .map((r) => {\n    const d = String(r.due || '').trim().slice(0, 10);\n    return { r, bucket: d && d < today ? 0 : (!d || d === today ? 1 : 2),\n             prio: PRIO[String(r.priority || '').trim().toLowerCase()] ?? 1, due: d };\n  })\n  .sort((a, b) => a.bucket - b.bucket || a.prio - b.prio);\n\nif (!open.length) {\n  return [{ json: { chatId: inp.chatId, message: `${t.title}\\n\\n${t.none}` } }];\n}\n\nconst lines = open.slice(0, CFG.max).map((x, i) => {\n  const tags = String(x.r.tags || '').trim();\n  return `${i + 1}. ${ICON[x.prio]} ${esc(x.r.task)}`\n    + (x.bucket === 0 ? ` <b>(${t.od})</b>` : '')\n    + (x.due && x.bucket === 2 ? ` <i>@${x.due}</i>` : '')\n    + (tags ? ` <i>#${esc(tags.replace(/[\\s,]+/g, ' #'))}</i>` : '');\n});\n\nreturn [{\n  json: {\n    chatId: inp.chatId,\n    message: [`${t.title} (${open.length})`, '', ...lines, '', `———\\n${t.hint}`].join('\\n'),\n  },\n}];\n"
+      },
+      "id": "📋 Build Task List",
+      "name": "📋 Build Task List",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        760,
+        860
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "/* ══════════════════════════════════════════════════════════════════════\n *  ❓ HELP / FALLBACK  —  راهنما و پاسخ به دستور ناشناخته\n * ══════════════════════════════════════════════════════════════════════ */\nconst CFG = { lang: 'fa' };\n\nconst inp = $json;\n\nconst FA = `🤖 <b>دستیار گزارش روزانه</b>\n\n<b>دستورها</b>\n<code>/task عنوان</code> — افزودن کار (میان‌بر: <code>+ عنوان</code>)\n   افزونه‌ها: <code>!بالا</code> اولویت · <code>@2026-08-20</code> سررسید · <code>#تگ</code>\n<code>/list</code> — کارهای باز با شماره\n<code>/done 3</code> — بستن کار شمارهٔ ۳ (یا بخشی از عنوان)\n<code>/report متن</code> — ثبت دستی گزارش امروز\n<code>/off</code> — ثبت مرخصی امروز\n<code>/help</code> — همین راهنما\n\n<b>خودکار</b>\n☀️ هر صبح: لیست کارهای امروز\n🌆 هر عصر: درخواست گزارش روزانه\n📊 اول هر ماه: گزارش تجمیعی عملکرد\n\n<i>هر پیام معمولی (بدون /) به‌عنوان گزارش امروز ذخیره می‌شود.</i>`;\n\nconst EN = `🤖 <b>Daily Report Assistant</b>\n\n<b>Commands</b>\n<code>/task title</code> — add a task (shortcut: <code>+ title</code>)\n   modifiers: <code>!high</code> priority · <code>@2026-08-20</code> due · <code>#tag</code>\n<code>/list</code> — numbered open tasks\n<code>/done 3</code> — close task #3 (or part of its title)\n<code>/report text</code> — log today's report manually\n<code>/off</code> — mark today as a day off\n<code>/help</code> — this message\n\n<b>Automatic</b>\n☀️ Every morning: today's task list\n🌆 Every evening: daily report request\n📊 1st of the month: aggregated performance report\n\n<i>Any plain message (no /) is stored as today's report.</i>`;\n\nreturn { json: { chatId: inp.chatId, message: CFG.lang === 'fa' ? FA : EN } };\n"
+      },
+      "id": "❓ Help Message",
+      "name": "❓ Help Message",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        280,
+        1020
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "/* ══════════════════════════════════════════════════════════════════════\n *  🧾 PARSE DAILY REPORT\n *  متن آزاد کاربر را به یک ردیف ساختاریافتهٔ آرشیو تبدیل می‌کند.\n *  Turns the user's free-form message into one structured archive row.\n * ══════════════════════════════════════════════════════════════════════ */\nconst CFG = { lang: 'fa', tz: 'Asia/Tehran', minChars: 3 };\n\nconst L = {\n  fa: {\n    saved: '🗄 <b>گزارش امروز ذخیره شد</b>',\n    items: 'مورد',\n    hours: 'ساعت',\n    mood: 'حال',\n    off: '🌴 <b>امروز مرخصی ثبت شد</b>',\n    short: '⚠️ گزارش خیلی کوتاه است. لطفاً کمی توضیح بده.',\n    tip: 'گزارش تجمیعی ماه، اول ماه بعد برایت می‌آید.',\n    wd: ['یکشنبه', 'دوشنبه', 'سه‌شنبه', 'چهارشنبه', 'پنجشنبه', 'جمعه', 'شنبه'],\n  },\n  en: {\n    saved: '🗄 <b>Daily report saved</b>',\n    items: 'item(s)',\n    hours: 'hours',\n    mood: 'mood',\n    off: '🌴 <b>Day off recorded</b>',\n    short: '⚠️ That report is very short. Add a bit more detail.',\n    tip: 'Your monthly roll-up arrives on the 1st.',\n    wd: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],\n  },\n};\nconst t = L[CFG.lang] || L.en;\n\nconst esc = (s) => String(s == null ? '' : s)\n  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\n\nconst inp = $json;\nconst now = $now.setZone(CFG.tz);\nconst isOff = inp.command === 'off';\n\n// اگر پیام با دستور شروع شده باشد فقط بدنهٔ آن گزارش است / strip a leading command\nlet text = String((inp.command ? inp.args : inp.text) || '').trim();\n\n// ساعت: 6.5  /  hours: 6.5\nlet hours = '';\ntext = text.replace(/(^|\\s)(ساعت|hours?|hrs?)\\s*[:：=]?\\s*(\\d+(?:[.,]\\d+)?)/gi, (_, sp, __, v) => {\n  hours = String(v).replace(',', '.'); return sp;\n}).trim();\n\n// حال: خوب  /  mood: good\nlet mood = '';\ntext = text.replace(/(^|\\s)(حال|mood)\\s*[:：=]?\\s*([^\\s،,]+)/gi, (_, sp, __, v) => {\n  mood = v; return sp;\n}).trim();\n\n// #تگ‌ها  /  #tags\nconst tags = [];\ntext = text.replace(/(^|\\s)#([^\\s#]+)/g, (_, sp, v) => { tags.push(v); return sp; }).trim();\n\nconst lines = text.split(/\\r?\\n/).map((l) => l.replace(/^\\s*[-•*—]\\s*/, '').trim()).filter(Boolean);\nconst clean = lines.join('\\n');\n\nif (!isOff && clean.length < CFG.minChars) {\n  return { json: { chatId: inp.chatId, ok: false, skipArchive: true, message: t.short } };\n}\n\nconst jsWeekday = now.weekday % 7; // luxon: 1=Mon..7=Sun  →  0=Sun..6=Sat\nconst row = {\n  date:        now.toISODate(),\n  weekday:     t.wd[jsWeekday] || '',\n  report:      isOff ? 'OFF' : clean,\n  items_count: isOff ? 0 : lines.length,\n  done_count:  isOff ? 0 : lines.length,\n  hours:       isOff ? 0 : (hours === '' ? '' : Number(hours)),\n  tags:        tags.join(','),\n  mood:        isOff ? 'off' : mood,\n  source:      inp.source || '',\n  owner:       inp.userName || inp.userId || '',\n  chat_id:     inp.chatId || '',\n  created_at:  now.toISO(),\n};\n\nconst summary = isOff\n  ? `${t.off}\\n<i>${row.date}</i>`\n  : [\n      t.saved,\n      `<i>${row.date} · ${esc(row.weekday)}</i>`,\n      '',\n      ...lines.slice(0, 12).map((l) => `• ${esc(l)}`),\n      '',\n      `📊 ${lines.length} ${t.items}` +\n        (hours ? ` · ⏱ ${esc(hours)} ${t.hours}` : '') +\n        (mood ? ` · 🙂 ${esc(mood)}` : ''),\n      tags.length ? `🏷 #${tags.map(esc).join(' #')}` : '',\n      '',\n      `<i>${t.tip}</i>`,\n    ].filter((x) => x !== null).join('\\n');\n\nreturn { json: { ...row, chatId: inp.chatId, ok: true, skipArchive: false, message: summary } };\n"
+      },
+      "id": "🧾 Parse Daily Report",
+      "name": "🧾 Parse Daily Report",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        280,
+        1200
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "✔️ Report Valid?-c1",
+              "leftValue": "={{ $json.ok }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "id": "✔️ Report Valid?",
+      "name": "✔️ Report Valid?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        520,
+        1200
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "sheet",
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "",
+          "cachedResultName": "Daily Report Assistant"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Reports"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "date": "={{ $json.date }}",
+            "weekday": "={{ $json.weekday }}",
+            "report": "={{ $json.report }}",
+            "items_count": "={{ $json.items_count }}",
+            "done_count": "={{ $json.done_count }}",
+            "hours": "={{ $json.hours }}",
+            "tags": "={{ $json.tags }}",
+            "mood": "={{ $json.mood }}",
+            "source": "={{ $json.source }}",
+            "owner": "={{ $json.owner }}",
+            "chat_id": "={{ $json.chat_id }}",
+            "created_at": "={{ $json.created_at }}"
+          },
+          "schema": [
+            {
+              "id": "date",
+              "displayName": "date",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "weekday",
+              "displayName": "weekday",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "report",
+              "displayName": "report",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "items_count",
+              "displayName": "items_count",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "done_count",
+              "displayName": "done_count",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "hours",
+              "displayName": "hours",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "tags",
+              "displayName": "tags",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "mood",
+              "displayName": "mood",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "source",
+              "displayName": "source",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "owner",
+              "displayName": "owner",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "chat_id",
+              "displayName": "chat_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ]
+        },
+        "options": {
+          "useAppend": true
+        }
+      },
+      "id": "🗄 Archive Report",
+      "name": "🗄 Archive Report",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        760,
+        1140
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "={{ $('🔀 Normalize Input').first().json.chatId }}",
+        "text": "={{ $('🧾 Parse Daily Report').first().json.message }}",
+        "replyMarkup": "none",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML",
+          "disable_web_page_preview": true
+        }
+      },
+      "id": "✅ Confirm Report",
+      "name": "✅ Confirm Report",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1000,
+        1140
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// 🚫 کاربر غیرمجاز / unauthorized user\n// فهرست سفید در نود «🔀 Normalize Input» تنظیم می‌شود.\n// The allowlist lives in the \"🔀 Normalize Input\" node.\nreturn {\n  json: {\n    chatId: $json.chatId,\n    message: '⛔️ این ربات فقط برای کاربران مجاز است.\\n⛔️ This bot is restricted to authorised users.',\n  },\n};"
+      },
+      "id": "denied",
+      "name": "🚫 Access Denied",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        20,
+        1420
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "={{ $json.chatId }}",
+        "text": "={{ $json.message }}",
+        "replyMarkup": "none",
+        "additionalFields": {
+          "appendAttribution": false,
+          "parse_mode": "HTML",
+          "disable_web_page_preview": true
+        }
+      },
+      "id": "💬 Send Info",
+      "name": "💬 Send Info",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1240,
+        1000
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 2000
+    },
+    {
+      "parameters": {
+        "content": "## ⚙️ راه‌اندازی در ۵ دقیقه / 5-minute setup\n\n1. **Google Sheets** — یک سند با دو شیت `Tasks` و `Reports` بسازید (ستون‌ها در README).\n   Create one spreadsheet with two tabs: `Tasks` and `Reports`.\n2. در همهٔ نودهای Google Sheets، سند را از لیست انتخاب کنید.\n   Pick the document from the list in every Google Sheets node.\n3. ربات تلگرام بسازید (@BotFather) و کردنشیال `telegramApi` را وصل کنید.\n   Create a Telegram bot and attach the `telegramApi` credential.\n4. `<<TELEGRAM_CHAT_ID>>` را در سه نود Code جایگزین کنید:\n   Replace `<<TELEGRAM_CHAT_ID>>` in three Code nodes:\n   `🧠 Build Morning Message` · `🧠 Build Evening Prompt` · `📊 Build Monthly Summary`\n   (آی‌دی خود را از @get_id_bot بگیرید / get your id from @get_id_bot)\n5. اختیاری: `allowedUserIds` در `🔀 Normalize Input` را پر کنید.\n   Optional: fill `allowedUserIds` in `🔀 Normalize Input`.\n6. Activate ✅",
+        "height": 380,
+        "width": 620,
+        "color": 4
+      },
+      "id": "sticky-34",
+      "name": "Note 34",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -700,
+        -420
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## ☀️ صبح / Morning — 08:30\nکارهای باز را دسته‌بندی‌شده (عقب‌افتاده / امروز / بعداً) و اولویت‌دار می‌فرستد.\n\nSends open tasks grouped by overdue / today / later, sorted by priority.",
+        "height": 120,
+        "width": 700,
+        "color": 5
+      },
+      "id": "sticky-35",
+      "name": "Note 35",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -20,
+        -180
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 🌆 عصر / Evening — 17:30\nگزارش روزانه را با Force-Reply می‌خواهد؛ کارهای بستهٔ امروز را یادآوری می‌کند.\n\nAsks for the daily report with Force-Reply, pre-listing what was closed today.",
+        "height": 110,
+        "width": 700,
+        "color": 3
+      },
+      "id": "sticky-36",
+      "name": "Note 36",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -20,
+        60
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 📊 ماهانه / Monthly — روز ۱ ساعت ۹\nپوشش، تعداد کار، ساعت، طولانی‌ترین زنجیره، حوزه‌های کاری و دستاوردهای شاخص.\nمستقیم قابل استفاده در جلسهٔ ارزیابی عملکرد.\n\nCoverage, task count, hours, longest streak, focus areas, highlights —\nready to paste into a performance review.",
+        "height": 110,
+        "width": 700,
+        "color": 6
+      },
+      "id": "sticky-37",
+      "name": "Note 37",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -20,
+        280
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 🔀 تعویض کانال ورودی / Swap the input channel\n\n**فقط ۲ چیز عوض می‌شود / only 2 things change:**\n1. نود تریگر (`💬 Telegram Trigger`) → Form Trigger / Webhook / IMAP / WhatsApp\n2. بلوک `SOURCE` داخل `🔀 Normalize Input` (نمونه‌های آماده کامنت شده‌اند)\n\nبقیهٔ ورک‌فلو فقط این قرارداد را می‌بیند و دست‌نخورده می‌ماند:\nThe rest of the workflow only sees this contract and stays untouched:\n`{ source, userId, userName, chatId, text, messageId, receivedAt }`",
+        "height": 300,
+        "width": 420,
+        "color": 7
+      },
+      "id": "sticky-38",
+      "name": "Note 38",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -700,
+        600
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 💬 دستورها / Commands\n`/task عنوان !بالا @2026-08-20 #تگ` — افزودن (میان‌بر `+`)\n`/list` · `/done 3` · `/report متن` · `/off` · `/help`\n\nهر پیام بدون `/` = گزارش امروز.\nAny message without `/` is stored as today's report.",
+        "height": 380,
+        "width": 220,
+        "color": 5
+      },
+      "id": "sticky-39",
+      "name": "Note 39",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        20,
+        1000
+      ]
+    }
+  ],
+  "connections": {
+    "☀️ Morning Trigger": {
+      "main": [
+        [
+          {
+            "node": "📥 Fetch Tasks (Morning)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📥 Fetch Tasks (Morning)": {
+      "main": [
+        [
+          {
+            "node": "🧠 Build Morning Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🧠 Build Morning Message": {
+      "main": [
+        [
+          {
+            "node": "📤 Send Morning Reminder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🌆 Evening Trigger": {
+      "main": [
+        [
+          {
+            "node": "📥 Fetch Tasks (Evening)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📥 Fetch Tasks (Evening)": {
+      "main": [
+        [
+          {
+            "node": "🧠 Build Evening Prompt",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🧠 Build Evening Prompt": {
+      "main": [
+        [
+          {
+            "node": "📤 Ask For Daily Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📅 Monthly Trigger": {
+      "main": [
+        [
+          {
+            "node": "📚 Read Report Archive",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📚 Read Report Archive": {
+      "main": [
+        [
+          {
+            "node": "📊 Build Monthly Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📊 Build Monthly Summary": {
+      "main": [
+        [
+          {
+            "node": "📤 Send Monthly Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "💬 Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "🔀 Normalize Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🔀 Normalize Input": {
+      "main": [
+        [
+          {
+            "node": "🛡 Authorized?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🛡 Authorized?": {
+      "main": [
+        [
+          {
+            "node": "🧭 Route Command",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "🚫 Access Denied",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🚫 Access Denied": {
+      "main": [
+        [
+          {
+            "node": "💬 Send Info",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🧭 Route Command": {
+      "main": [
+        [
+          {
+            "node": "🧾 Parse Task",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "📥 Fetch Tasks (Inbound)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "📥 Fetch Tasks (Inbound)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "❓ Help Message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "🧾 Parse Daily Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🧾 Parse Task": {
+      "main": [
+        [
+          {
+            "node": "✔️ Task Valid?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "✔️ Task Valid?": {
+      "main": [
+        [
+          {
+            "node": "➕ Append Task",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "💬 Send Info",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "➕ Append Task": {
+      "main": [
+        [
+          {
+            "node": "✅ Confirm Task",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📥 Fetch Tasks (Inbound)": {
+      "main": [
+        [
+          {
+            "node": "🔀 Done or List?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🔀 Done or List?": {
+      "main": [
+        [
+          {
+            "node": "🎯 Resolve Task to Close",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "📋 Build Task List",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🎯 Resolve Task to Close": {
+      "main": [
+        [
+          {
+            "node": "✔️ Found Task?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "✔️ Found Task?": {
+      "main": [
+        [
+          {
+            "node": "✔️ Mark Task Done",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "💬 Send Info",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "✔️ Mark Task Done": {
+      "main": [
+        [
+          {
+            "node": "✅ Confirm Done",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "📋 Build Task List": {
+      "main": [
+        [
+          {
+            "node": "💬 Send Info",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "❓ Help Message": {
+      "main": [
+        [
+          {
+            "node": "💬 Send Info",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🧾 Parse Daily Report": {
+      "main": [
+        [
+          {
+            "node": "✔️ Report Valid?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "✔️ Report Valid?": {
+      "main": [
+        [
+          {
+            "node": "🗄 Archive Report",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "💬 Send Info",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "🗄 Archive Report": {
+      "main": [
+        [
+          {
+            "node": "✅ Confirm Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Asia/Tehran",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveManualExecutions": true,
+    "callerPolicy": "workflowsFromSameOwner"
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "tags": []
+}
