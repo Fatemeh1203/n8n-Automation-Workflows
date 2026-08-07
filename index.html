@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Automation Studio — استودیو اتوماسیون</title>
+  <meta name="description" content="Interactive demos of n8n automation workflows — دموی تعاملی اتوماسیون‌های n8n" />
+  <link rel="stylesheet" href="assets/css/main.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>" />
+</head>
+<body>
+
+<header class="site-header">
+  <div class="wrap header-inner">
+    <a class="brand" href="#/">
+      <span class="brand-mark">⚡</span>
+      <span class="brand-text">
+        <strong data-i18n="brand">استودیو اتوماسیون</strong>
+        <small data-i18n="brandSub">دموی تعاملی گردش‌کارها</small>
+      </span>
+    </a>
+
+    <nav class="main-nav">
+      <a href="#/" data-i18n="navProjects">پروژه‌ها</a>
+      <a href="#/about" data-i18n="navAbout">درباره</a>
+      <button id="langToggle" class="lang-toggle" type="button">
+        <span class="lang-current">EN</span>
+      </button>
+    </nav>
+  </div>
+</header>
+
+<main id="view"></main>
+
+<footer class="site-footer">
+  <div class="wrap footer-inner">
+    <p data-i18n="footerNote">همه‌ی دموها در مرورگر شما اجرا می‌شوند — بدون سرور، بدون کلید API.</p>
+    <p class="muted"><span data-i18n="builtWith">ساخته‌شده با</span> n8n · JavaScript</p>
+  </div>
+</footer>
+
+<script src="assets/js/i18n.js" defer></script>
+<script src="assets/js/projects.js" defer></script>
+<script src="assets/js/simulator.js" defer></script>
+<script src="assets/js/app.js" defer></script>
+</body>
+</html>
