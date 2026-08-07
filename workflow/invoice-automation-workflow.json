@@ -7,7 +7,7 @@
           "message"
         ],
         "additionalFields": {
-          "download": true,
+          "download": false,
           "imageSize": "large"
         }
       },
@@ -31,14 +31,24 @@
           },
           "conditions": [
             {
+              "id": "cond-photo",
               "leftValue": "={{ $json.message.photo }}",
               "operator": {
                 "type": "array",
                 "operation": "notEmpty"
               }
+            },
+            {
+              "id": "cond-document",
+              "leftValue": "={{ $json.message.document }}",
+              "operator": {
+                "type": "object",
+                "operation": "exists",
+                "singleValue": true
+              }
             }
           ],
-          "combinator": "and"
+          "combinator": "or"
         },
         "options": {}
       },
@@ -53,8 +63,24 @@
     },
     {
       "parameters": {
+        "resource": "file",
+        "operation": "get",
+        "fileId": "={{ $json.message.photo ? $json.message.photo[$json.message.photo.length - 1].file_id : $json.message.document.file_id }}",
+        "download": true
+      },
+      "id": "node-get-file",
+      "name": "دریافت فایل از تلگرام",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        660,
+        120
+      ]
+    },
+    {
+      "parameters": {
         "mode": "runOnceForAllItems",
-        "jsCode": "const out = [];\nconst items = $input.all();\nfor (let i = 0; i < items.length; i++) {\n  const j = items[i].json || {};\n  const msg = j.message || {};\n  const caption = (msg.caption || msg.text || '').toString();\n  const chatId = (msg.chat && msg.chat.id) ? msg.chat.id : '';\n  let invoiceType = 'خرید';\n  if (caption.indexOf('فروش') !== -1) { invoiceType = 'فروش'; }\n  else if (caption.indexOf('خرید') !== -1) { invoiceType = 'خرید'; }\n  const binary = items[i].binary || {};\n  const key = Object.keys(binary)[0];\n  if (!key) { throw new Error('تصویری در پیام یافت نشد. لطفاً عکس فاکتور را ارسال کنید.'); }\n  const buffer = await this.helpers.getBinaryDataBuffer(i, key);\n  const base64 = buffer.toString('base64');\n  const mime = binary[key].mimeType || 'image/jpeg';\n  const dataUrl = 'data:' + mime + ';base64,' + base64;\n  const systemPrompt = 'You are a precise accounting OCR assistant for Iranian invoices. Read the invoice image and extract structured data. Return ONLY one valid JSON object with no markdown and no explanation. Use exactly these keys: invoice_number, invoice_date, party_name, description, quantity, amount_before_tax, tax_rate, vat_amount, total_with_tax. Output every number and every digit using Western Arabic numerals (0-9) only, never Persian or Arabic-Indic digits. Numbers must be plain digits with no thousands separators and no currency words. Read each digit carefully and double-check the amounts so totals are consistent. Keep invoice_date exactly as printed but with Western digits (Jalali calendar is fine). Use empty string for missing text fields and 0 for missing numbers.';\n  const userText = 'این تصویر یک فاکتور ' + invoiceType + ' است. اطلاعات آن را دقیق استخراج کن و فقط یک شیء JSON با ارقام لاتین برگردان.';\n  const aiBody = {\n    model: 'qwen/qwen3.6-27b',\n    temperature: 0,\n    messages: [\n      { role: 'system', content: systemPrompt },\n      { role: 'user', content: [\n        { type: 'text', text: userText },\n        { type: 'image_url', image_url: { url: dataUrl } }\n      ] }\n    ]\n  };\n  out.push({ json: { invoiceType: invoiceType, chatId: chatId, caption: caption, aiBody: aiBody } });\n}\nreturn out;"
+        "jsCode": "const items = $input.all();\nconst out = [];\nconst trig = $('دریافت عکس از تلگرام').first().json || {};\nconst msg = trig.message || {};\nconst caption = (msg.caption || msg.text || '').toString();\nconst chatId = (msg.chat && msg.chat.id) ? msg.chat.id : '';\nlet invoiceType = 'خرید';\nif (caption.indexOf('فروش') !== -1) { invoiceType = 'فروش'; }\nelse if (caption.indexOf('خرید') !== -1) { invoiceType = 'خرید'; }\nfor (let i = 0; i < items.length; i++) {\n  const binary = items[i].binary || {};\n  const key = Object.keys(binary)[0];\n  if (!key) { throw new Error('فایل تصویر دریافت نشد.'); }\n  const buffer = await this.helpers.getBinaryDataBuffer(i, key);\n  const base64 = buffer.toString('base64');\n  const mime = binary[key].mimeType || 'image/jpeg';\n  const dataUrl = 'data:' + mime + ';base64,' + base64;\n  const systemPrompt = 'You are a precise accounting OCR assistant for Iranian invoices. Read the invoice image and extract structured data. Return ONLY one valid JSON object with no markdown and no explanation. Use exactly these keys: invoice_number, invoice_date, party_name, description, quantity, amount_before_tax, tax_rate, vat_amount, total_with_tax. Output every number and every digit using Western Arabic numerals (0-9) only, never Persian or Arabic-Indic digits. Numbers must be plain digits with no thousands separators and no currency words. Read each digit carefully and double-check the amounts so totals are consistent. Keep invoice_date exactly as printed but with Western digits (Jalali calendar is fine). Use empty string for missing text fields and 0 for missing numbers.';\n  const userText = 'این تصویر یک فاکتور ' + invoiceType + ' است. اطلاعات آن را دقیق استخراج کن و فقط یک شیء JSON با ارقام لاتین برگردان.';\n  const aiBody = {\n    model: 'qwen/qwen3.6-27b',\n    temperature: 0,\n    messages: [\n      { role: 'system', content: systemPrompt },\n      { role: 'user', content: [\n        { type: 'text', text: userText },\n        { type: 'image_url', image_url: { url: dataUrl } }\n      ] }\n    ]\n  };\n  out.push({ json: { invoiceType: invoiceType, chatId: chatId, caption: caption, aiBody: aiBody } });\n}\nreturn out;"
       },
       "id": "node-prepare-ai",
       "name": "آماده‌سازی درخواست هوش مصنوعی",
@@ -256,7 +282,7 @@
         "resource": "message",
         "operation": "sendMessage",
         "chatId": "={{ $json.message.chat.id }}",
-        "text": "لطفاً «عکس» فاکتور را ارسال کنید و در کپشن آن کلمه «خرید» یا «فروش» را بنویسید تا در حساب مناسب ثبت شود.",
+        "text": "لطفاً تصویر فاکتور را (به‌صورت «عکس» یا «فایل») ارسال کنید و در کپشن آن کلمه «خرید» یا «فروش» را بنویسید تا در حساب مناسب ثبت شود.",
         "additionalFields": {
           "appendAttribution": false
         }
@@ -303,7 +329,7 @@
       "main": [
         [
           {
-            "node": "آماده‌سازی درخواست هوش مصنوعی",
+            "node": "دریافت فایل از تلگرام",
             "type": "main",
             "index": 0
           }
@@ -311,6 +337,17 @@
         [
           {
             "node": "راهنمای ارسال عکس",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "دریافت فایل از تلگرام": {
+      "main": [
+        [
+          {
+            "node": "آماده‌سازی درخواست هوش مصنوعی",
             "type": "main",
             "index": 0
           }
