@@ -38,7 +38,9 @@ Code، شرط‌های IF و Switch و فرمول‌ها) در جاوااسکر�
 ## Features / امکانات
 
 - Light and dark theme, remembered between visits — تم روشن و تاریک با ذخیره‌ی انتخاب کاربر
-- A distinct 3D background scene per page, drawn entirely as inline SVG — بک‌گراند سه‌بعدی مخصوص هر صفحه، تماماً SVG داخلی
+- An animated 3D galaxy on the home page — spiral arms, a glowing core, a starfield and a ringed planet — کهکشان سه‌بعدی متحرک در صفحه‌ی اصلی
+- Every project page gets props from its own subject: a jeweller's counter (rings, coins, ingot, balance scale), a trading desk (candlesticks, banknotes), a scanning bench (receipts, scan beam, AI chip), a planner desk (calendar, clock, checklist), a mail room (envelopes, labels, inbox) — بک‌گراند سه‌بعدی متناسب با موضوع هر پروژه
+- Pointer parallax: background layers move at different depths as the mouse moves (device tilt on mobile) — حرکت لایه‌های بک‌گراند با موس و شیب گوشی
 - Persian / English switch with automatic text direction — تعویض فارسی و انگلیسی با جهت خودکار
 - Contact page with LinkedIn, email and GitHub — صفحه‌ی ارتباط با لینکدین، ایمیل و گیت‌هاب
 

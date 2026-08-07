@@ -24,9 +24,9 @@
   --blue:        #2563c9;
   --purple:      #6d43c8;
 
-  --bg-blobs:    .26;
-  --bg-solids:   .3;
-  --bg-lines:    .4;
+  --bg-blobs:    .24;
+  --bg-solids:   .42;
+  --bg-lines:    .34;
 
   --radius:      14px;
   --radius-sm:   9px;
@@ -58,9 +58,9 @@ html[data-theme="dark"] {
   --blue:        #60a5fa;
   --purple:      #a78bfa;
 
-  --bg-blobs:    .55;
-  --bg-solids:   .48;
-  --bg-lines:    .6;
+  --bg-blobs:    .5;
+  --bg-solids:   .62;
+  --bg-lines:    .5;
 
   --shadow:      0 18px 44px rgba(0, 0, 0, .5);
 }
@@ -97,10 +97,44 @@ button { font: inherit; cursor: pointer; border: none; background: none; color: 
 #bg.is-in { opacity: 1; }
 .bg-svg { width: 100%; height: 100%; display: block; }
 .bg-blobs { opacity: var(--bg-blobs); }
-.bg-orb, .bg-ring { opacity: var(--bg-solids); filter: blur(1.4px); }
 .bg-floor { opacity: var(--bg-lines); }
-.bg-motes { opacity: calc(var(--bg-solids) * .6); }
-html[data-theme="dark"] .bg-motes { mix-blend-mode: screen; }
+.bg-arms  { opacity: calc(var(--bg-solids) * 1.1); }
+.bg-stars { opacity: calc(var(--bg-solids) * 1.25); }
+html[data-theme="dark"] .bg-stars { mix-blend-mode: screen; }
+html:not([data-theme="dark"]) .bg-stars { fill: #3d4a86; }
+.layer > .anim, .layer > g { opacity: var(--bg-solids); }
+.layer { transition: transform .06s linear; }
+
+/* ---- animated props ---- */
+.anim { transform-box: view-box; transform-origin: center; will-change: transform; }
+
+.float-a   { animation: floatA 9s ease-in-out infinite; }
+.float-b   { animation: floatB 11s ease-in-out infinite; }
+.float-c   { animation: floatC 13s ease-in-out infinite; }
+.coin-flip { animation: coinFlip 9s ease-in-out infinite; }
+.spin-tilt { animation: spinTilt 34s linear infinite; }
+.drift     { animation: spinTilt 60s linear infinite; }
+.sway      { animation: sway 5s ease-in-out infinite; }
+.spin-slow { animation: spinTilt 36s linear infinite; }
+.spin-fast { animation: spinTilt 7s linear infinite; }
+.sparkle   { animation: sparkle 4.5s ease-in-out infinite; }
+.scan      { animation: scan 3.4s ease-in-out infinite; }
+.twinkle circle, circle.twinkle { animation: twinkle 3.2s ease-in-out infinite; }
+.galaxy-spin { animation: spinTilt 260s linear infinite; }
+.breathe   { animation: breathe 8s ease-in-out infinite; }
+.comet     { animation: comet 11s ease-in-out infinite; }
+
+@keyframes floatA   { 0%, 100% { transform: translateY(0) rotate(0deg); }   50% { transform: translateY(-20px) rotate(2.5deg); } }
+@keyframes floatB   { 0%, 100% { transform: translateY(0) rotate(0deg); }   50% { transform: translateY(18px) rotate(-2.5deg); } }
+@keyframes floatC   { 0%, 100% { transform: translateY(0) rotate(-1.5deg); } 50% { transform: translateY(-28px) rotate(3deg); } }
+@keyframes coinFlip { 0%, 100% { transform: scaleX(1); } 42% { transform: scaleX(.08); } 50% { transform: scaleX(.3); } }
+@keyframes spinTilt { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+@keyframes sway     { 0%, 100% { transform: rotate(-5deg); } 50% { transform: rotate(5deg); } }
+@keyframes sparkle  { 0%, 100% { transform: scale(1); opacity: .75; } 50% { transform: scale(1.16); opacity: 1; } }
+@keyframes scan     { 0%, 100% { transform: translateY(-72px); } 50% { transform: translateY(72px); } }
+@keyframes twinkle  { 0%, 100% { opacity: .25; } 50% { opacity: 1; } }
+@keyframes breathe  { 0%, 100% { transform: scale(1); opacity: .9; } 50% { transform: scale(1.06); opacity: 1; } }
+@keyframes comet    { 0% { transform: translate(-260px, -150px); opacity: 0; } 12% { opacity: 1; } 46% { transform: translate(420px, 250px); opacity: 0; } 100% { transform: translate(420px, 250px); opacity: 0; } }
 
 /* readability veil over the scene */
 body::before {
@@ -108,7 +142,7 @@ body::before {
   background:
     radial-gradient(110% 70% at 50% 8%, transparent 0%, var(--bg-solid) 72%),
     linear-gradient(180deg, transparent 0%, var(--bg-solid) 92%);
-  opacity: .88;
+  opacity: .84;
 }
 
 /* ============================================================
