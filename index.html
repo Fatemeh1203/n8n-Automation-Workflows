@@ -1,19 +1,22 @@
 <!DOCTYPE html>
-<html lang="fa" dir="rtl">
+<html lang="fa" dir="rtl" data-theme="dark">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Automation Studio — استودیو اتوماسیون</title>
-  <meta name="description" content="Interactive demos of n8n automation workflows — دموی تعاملی اتوماسیون‌های n8n" />
+  <meta name="description" content="Interactive n8n automation demos by Fatemeh Shams — دموی تعاملی اتوماسیون‌های n8n، فاطمه شمس" />
+  <meta name="author" content="Fatemeh Shams — فاطمه شمس" />
   <link rel="stylesheet" href="assets/css/main.css" />
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>" />
+  <link rel="icon" href="assets/img/logo.svg" type="image/svg+xml" />
 </head>
 <body>
+
+<div id="bg" aria-hidden="true"></div>
 
 <header class="site-header">
   <div class="wrap header-inner">
     <a class="brand" href="#/">
-      <span class="brand-mark">⚡</span>
+      <img class="brand-logo" src="assets/img/logo.svg" alt="Automation Studio" />
       <span class="brand-text">
         <strong data-i18n="brand">استودیو اتوماسیون</strong>
         <small data-i18n="brandSub">دموی تعاملی گردش‌کارها</small>
@@ -21,9 +24,22 @@
     </a>
 
     <nav class="main-nav">
-      <a href="#/" data-i18n="navProjects">پروژه‌ها</a>
-      <a href="#/about" data-i18n="navAbout">درباره</a>
-      <button id="langToggle" class="lang-toggle" type="button">
+      <a class="nav-link" href="#/" data-i18n="navProjects" data-nav="#/">پروژه‌ها</a>
+      <a class="nav-link" href="#/about" data-i18n="navAbout" data-nav="#/about">درباره</a>
+      <a class="nav-link" href="#/contact" data-i18n="navContact" data-nav="#/contact">ارتباط با من</a>
+
+      <a class="icon-btn" id="githubLink"
+         href="https://github.com/Fatemeh1203/n8n-special-Arezou-"
+         target="_blank" rel="noopener noreferrer" title="GitHub">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 .5C5.73.5.9 5.33.9 11.6c0 4.9 3.17 9.05 7.57 10.52.55.1.76-.24.76-.53v-2.05c-3.08.67-3.73-1.3-3.73-1.3-.5-1.29-1.23-1.63-1.23-1.63-1.01-.69.08-.67.08-.67 1.11.08 1.7 1.15 1.7 1.15.99 1.7 2.6 1.21 3.23.93.1-.72.39-1.21.7-1.49-2.46-.28-5.05-1.23-5.05-5.48 0-1.21.43-2.2 1.14-2.98-.11-.28-.5-1.41.11-2.94 0 0 .93-.3 3.05 1.14a10.5 10.5 0 0 1 5.56 0c2.12-1.44 3.05-1.14 3.05-1.14.61 1.53.22 2.66.11 2.94.71.78 1.14 1.77 1.14 2.98 0 4.26-2.6 5.2-5.07 5.47.4.35.76 1.03.76 2.08v3.08c0 .3.2.64.77.53 4.4-1.47 7.56-5.62 7.56-10.52C23.1 5.33 18.27.5 12 .5Z"/></svg>
+      </a>
+
+      <button class="icon-btn" id="themeToggle" type="button" title="Theme">
+        <svg class="theme-icon-light" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 17a5 5 0 1 1 0-10 5 5 0 0 1 0 10Zm0-13.5a1 1 0 0 1 1 1V6a1 1 0 1 1-2 0V4.5a1 1 0 0 1 1-1Zm0 15a1 1 0 0 1 1 1V21a1 1 0 1 1-2 0v-1.5a1 1 0 0 1 1-1ZM4.5 11a1 1 0 1 1 0 2H3a1 1 0 1 1 0-2h1.5Zm16.5 0a1 1 0 1 1 0 2h-1.5a1 1 0 1 1 0-2H21ZM5.99 4.58l1.06 1.06a1 1 0 0 1-1.41 1.41L4.58 5.99A1 1 0 0 1 5.99 4.58Zm11.96 11.96 1.06 1.06a1 1 0 0 1-1.41 1.41l-1.06-1.06a1 1 0 0 1 1.41-1.41Zm1.06-11.96a1 1 0 0 1 0 1.41l-1.06 1.06a1 1 0 1 1-1.41-1.41l1.06-1.06a1 1 0 0 1 1.41 0ZM7.05 16.54a1 1 0 0 1 0 1.41L5.99 19.01a1 1 0 0 1-1.41-1.41l1.06-1.06a1 1 0 0 1 1.41 0Z"/></svg>
+        <svg class="theme-icon-dark" viewBox="0 0 24 24" aria-hidden="true"><path d="M21.3 13.6A9 9 0 1 1 10.4 2.7a7.5 7.5 0 0 0 10.9 10.9Z"/></svg>
+      </button>
+
+      <button class="lang-toggle" id="langToggle" type="button">
         <span class="lang-current">EN</span>
       </button>
     </nav>
@@ -34,12 +50,17 @@
 
 <footer class="site-footer">
   <div class="wrap footer-inner">
-    <p data-i18n="footerNote">همه‌ی دموها در مرورگر شما اجرا می‌شوند — بدون سرور، بدون کلید API.</p>
-    <p class="muted"><span data-i18n="builtWith">ساخته‌شده با</span> n8n · JavaScript</p>
+    <p><span data-i18n="footerBy">ساخته‌شده توسط</span> <strong data-i18n="ownerName">فاطمه شمس</strong> · <span dir="ltr">Fatemeh Shams</span></p>
+    <div class="footer-links">
+      <a href="https://github.com/Fatemeh1203" target="_blank" rel="noopener noreferrer">GitHub</a>
+      <a href="https://www.linkedin.com/in/fatemeh-shams/" target="_blank" rel="noopener noreferrer">LinkedIn</a>
+      <a href="mailto:fatemeh.shams19@gmail.com">Email</a>
+    </div>
   </div>
 </footer>
 
 <script src="assets/js/i18n.js" defer></script>
+<script src="assets/js/backgrounds.js" defer></script>
 <script src="assets/js/projects.js" defer></script>
 <script src="assets/js/simulator.js" defer></script>
 <script src="assets/js/app.js" defer></script>

@@ -51,6 +51,24 @@ window.I18N = {
     aboutCard3Title: "دو زبانه",
     aboutCard3Body: "کل رابط کاربری و توضیح نودها به فارسی و انگلیسی است و جهت صفحه خودکار تغییر می‌کند.",
 
+    navContact: "ارتباط با من",
+    footerBy: "ساخته‌شده توسط",
+    ownerName: "فاطمه شمس",
+    ownerRole: "طراح و توسعه‌دهنده‌ی اتوماسیون با n8n",
+    heroAuthorLabel: "پروژه‌ها و دموها از",
+    themeTitle: "تغییر تم روشن / تاریک",
+    githubTitle: "مشاهده‌ی پروفایل گیت‌هاب",
+    viewOnGithub: "مشاهده در گیت‌هاب",
+
+    contactTitle: "ارتباط با من",
+    contactLead: "برای همکاری، سفارش اتوماسیون یا پرسش درباره‌ی هر کدام از این پروژه‌ها، از راه‌های زیر در دسترس هستم.",
+    contactLinkedin: "لینکدین",
+    contactEmail: "ایمیل",
+    contactGithub: "گیت‌هاب",
+    contactLinkedinHint: "رزومه و سوابق کاری",
+    contactEmailHint: "پاسخ معمولاً تا ۲۴ ساعت",
+    contactGithubHint: "کد و مخازن پروژه‌ها",
+
     sourceWorkflow: "گردش‌کار در n8n",
     currency: "تومان",
     notFound: "پروژه‌ای با این نشانی پیدا نشد.",
@@ -105,9 +123,40 @@ window.I18N = {
     aboutCard3Title: "Bilingual",
     aboutCard3Body: "The entire interface and every node description exist in Persian and English, with automatic text direction.",
 
+    navContact: "Contact",
+    footerBy: "Built by",
+    ownerName: "Fatemeh Shams",
+    ownerRole: "n8n automation designer & developer",
+    heroAuthorLabel: "Projects and demos by",
+    themeTitle: "Switch light / dark theme",
+    githubTitle: "Open the GitHub profile",
+    viewOnGithub: "View on GitHub",
+
+    contactTitle: "Contact",
+    contactLead: "For collaboration, an automation build, or a question about any of these projects, reach me through any of the channels below.",
+    contactLinkedin: "LinkedIn",
+    contactEmail: "Email",
+    contactGithub: "GitHub",
+    contactLinkedinHint: "Resume and work history",
+    contactEmailHint: "Usually answered within 24 hours",
+    contactGithubHint: "Source code and repositories",
+
     sourceWorkflow: "n8n workflow",
     currency: "Toman",
     notFound: "No project matches this address.",
+  },
+};
+
+window.Theme = {
+  current: localStorage.getItem("theme") ||
+    (window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark"),
+  set(mode) {
+    this.current = mode;
+    localStorage.setItem("theme", mode);
+    document.documentElement.setAttribute("data-theme", mode);
+  },
+  other() {
+    return this.current === "dark" ? "light" : "dark";
   },
 };
 

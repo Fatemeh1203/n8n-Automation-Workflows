@@ -1,5 +1,10 @@
 # Automation Studio — استودیو اتوماسیون
 
+**🔗 Live demo / دموی زنده: https://fatemeh1203.github.io/n8n-special-Arezou-/**
+
+By **Fatemeh Shams** — از **فاطمه شمس**
+[LinkedIn](https://www.linkedin.com/in/fatemeh-shams/) · [fatemeh.shams19@gmail.com](mailto:fatemeh.shams19@gmail.com) · [GitHub](https://github.com/Fatemeh1203)
+
 Interactive, bilingual (FA/EN) showcase of n8n automation workflows.
 Every project ships with a browser-side simulator: change the inputs, press run,
 and watch each node produce real JSON output step by step.
@@ -30,12 +35,21 @@ Code، شرط‌های IF و Switch و فرمول‌ها) در جاوااسکر�
 واقعاً محاسبه می‌شود و ضبط‌شده نیست. نودهایی که شرطشان برقرار نباشد کم‌رنگ
 می‌شوند — دقیقاً مثل رفتار n8n.
 
+## Features / امکانات
+
+- Light and dark theme, remembered between visits — تم روشن و تاریک با ذخیره‌ی انتخاب کاربر
+- A distinct 3D background scene per page, drawn entirely as inline SVG — بک‌گراند سه‌بعدی مخصوص هر صفحه، تماماً SVG داخلی
+- Persian / English switch with automatic text direction — تعویض فارسی و انگلیسی با جهت خودکار
+- Contact page with LinkedIn, email and GitHub — صفحه‌ی ارتباط با لینکدین، ایمیل و گیت‌هاب
+
 ## Structure
 
 ```
 index.html
+assets/img/logo.svg        brand mark (inline SVG, no raster assets)
 assets/css/main.css        design tokens, layout, canvas & invoice styling
-assets/js/i18n.js          fa/en dictionary + language state + number formatting
+assets/js/i18n.js          fa/en dictionary + language & theme state + number formatting
+assets/js/backgrounds.js   per-page 3D scene generator
 assets/js/projects.js      project catalogue; each node carries its own run()
 assets/js/simulator.js     canvas rendering + step-by-step execution engine
 assets/js/app.js           hash router, views, language toggle
