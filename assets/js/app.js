@@ -7,7 +7,7 @@
 
   const OWNER = {
     github: "https://github.com/Fatemeh1203",
-    repo: "https://github.com/Fatemeh1203/n8n-special-Arezou-",
+    repo: "https://github.com/Fatemeh1203/n8n-Automation-Workflows",
     linkedin: "https://www.linkedin.com/in/fatemeh-shams/",
     email: "fatemeh.shams19@gmail.com",
   };
