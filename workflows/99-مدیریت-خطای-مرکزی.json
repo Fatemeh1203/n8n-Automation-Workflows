@@ -1,0 +1,24 @@
+{
+  "name": "مدیریت خطای مرکزی",
+  "meta": {
+    "description": "گردش‌کار مشترک مدیریت خطا: لاگ کردن خطای هر نود از هر گردش‌کار در جدول logs و هشدار فنی به مدیر، بدون افشای جزئیات فنی به کاربر نهایی. باید به‌عنوان Error Workflow روی گردش‌کارهای دیگر تنظیم شود."
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "nodes": [
+    {"id":"8b882bbe-816c-4770-bda6-509e9bcd4370","name":"رخداد خطا در گردش‌کار","type":"n8n-nodes-base.errorTrigger","typeVersion":1,"position":[0,300],"parameters":{}},
+    {"id":"e4f046bf-0ec2-451d-8660-96be5dc6a3cc","name":"استخراج اطلاعات خطا","type":"n8n-nodes-base.code","typeVersion":2,"position":[220,300],"parameters":{"mode":"runOnceForAllItems","language":"javaScript","jsCode":"const j = $input.first().json;\nlet workflowName = 'نامشخص', nodeName = 'نامشخص', message = 'خطای نامشخص';\ntry { workflowName = (j.workflow && j.workflow.name) || workflowName; } catch (e) {}\ntry { nodeName = (j.execution && j.execution.lastNodeExecuted) || nodeName; } catch (e) {}\ntry { message = (j.execution && j.execution.error && j.execution.error.message) || message; } catch (e) {}\nreturn [{ json: { workflowName: workflowName, nodeName: nodeName, message: String(message).slice(0, 500) } }];"}},
+    {"id":"05c32094-f33c-4221-a125-498952275c73","name":"ثبت خطا در جدول logs","type":"n8n-nodes-base.postgres","typeVersion":2.7,"position":[440,300],"parameters":{"resource":"database","operation":"executeQuery","query":"INSERT INTO logs (workflow_name, node_name, message, occurred_at) VALUES ($1, $2, $3, now());","options":{"queryReplacement":"={{ [ $json.workflowName, $json.nodeName, $json.message ] }}"}},"credentials":{"postgres":{"id":"__SET_ME__","name":"دیتابیس داخلی مدرسه"}}},
+    {"id":"9c9370fb-afd3-4102-b6eb-cae23c4b2c2b","name":"یافتن مدیر برای هشدار","type":"n8n-nodes-base.postgres","typeVersion":2.7,"position":[660,300],"parameters":{"resource":"database","operation":"executeQuery","query":"SELECT s.chat_id AS chat_id FROM (SELECT 1) AS one LEFT JOIN staff s ON s.category = 'مدیر' LIMIT 1;"},"credentials":{"postgres":{"id":"__SET_ME__","name":"دیتابیس داخلی مدرسه"}}},
+    {"id":"30dabae0-2af6-4b85-9196-e465a4c6aff2","name":"مدیر یافت شد؟","type":"n8n-nodes-base.if","typeVersion":2.3,"position":[880,300],"parameters":{"conditions":{"options":{"caseSensitive":true,"leftValue":"","typeValidation":"strict"},"conditions":[{"leftValue":"={{ $json.chat_id ? String($json.chat_id) : '' }}","operator":{"type":"string","operation":"notEquals"},"rightValue":""}],"combinator":"and"}}},
+    {"id":"9a285881-1667-4ab9-8f26-e59b9c936c34","name":"هشدار فنی به مدیر","type":"n8n-nodes-base.telegram","typeVersion":1.2,"position":[1100,260],"parameters":{"resource":"message","operation":"sendMessage","chatId":"={{ $json.chat_id }}","text":"={{ '⚠️ خطای فنی\\nگردش‌کار: ' + $('استخراج اطلاعات خطا').item.json.workflowName + '\\nنود: ' + $('استخراج اطلاعات خطا').item.json.nodeName + '\\nپیام: ' + $('استخراج اطلاعات خطا').item.json.message }}","additionalFields":{"appendAttribution":false}},"onError":"continueRegularOutput","credentials":{"telegramApi":{"id":"__SET_ME__","name":"ربات تلگرام مدرسه"}}}
+  ],
+  "connections": {
+    "رخداد خطا در گردش‌کار":{"main":[[{"node":"استخراج اطلاعات خطا","type":"main","index":0}]]},
+    "استخراج اطلاعات خطا":{"main":[[{"node":"ثبت خطا در جدول logs","type":"main","index":0}]]},
+    "ثبت خطا در جدول logs":{"main":[[{"node":"یافتن مدیر برای هشدار","type":"main","index":0}]]},
+    "یافتن مدیر برای هشدار":{"main":[[{"node":"مدیر یافت شد؟","type":"main","index":0}]]},
+    "مدیر یافت شد؟":{"main":[[{"node":"هشدار فنی به مدیر","type":"main","index":0}]]}
+  }
+}
