@@ -1,0 +1,134 @@
+{
+  "name": "جریان سه - مدرسه به ولی",
+  "nodes": [
+    { "id": "1", "name": "تریگر فرم اطلاعیه", "type": "n8n-nodes-base.formTrigger", "typeVersion": 2, "position": [180, 200],
+      "parameters": { "formTitle": "ارسال اطلاعیه", "formFields": { "values": [
+        { "fieldLabel": "پایه یا کلاس هدف", "fieldType": "text", "requiredField": true },
+        { "fieldLabel": "متن اطلاعیه", "fieldType": "textarea", "requiredField": true }
+      ] } } },
+    { "id": "2", "name": "یافتن اولیای هدف", "type": "n8n-nodes-base.postgres", "typeVersion": 2, "position": [420, 200],
+      "parameters": { "operation": "executeQuery",
+        "query": "SELECT p.chat_id FROM parents p JOIN students s ON s.id = p.student_id WHERE p.verified_at IS NOT NULL AND (s.grade = $1 OR s.class = $1)",
+        "queryReplacement": "={{[$json['پایه یا کلاس هدف']]}}" },
+      "credentials": { "postgres": { "id": "school-postgres", "name": "PostgreSQL مدرسه" } } },
+    { "id": "3", "name": "ارسال اطلاعیه", "type": "n8n-nodes-base.httpRequest", "typeVersion": 4, "position": [660, 200],
+      "parameters": { "method": "POST", "url": "=https://api.telegram.org/bot{{$env.TELEGRAM_BOT_TOKEN}}/sendMessage", "sendBody": true,
+        "bodyParameters": { "parameters": [
+          { "name": "chat_id", "value": "={{$json.chat_id}}" },
+          { "name": "text", "value": "={{$('تریگر فرم اطلاعیه').first().json['متن اطلاعیه']}}" }
+        ] } }, "continueOnFail": true },
+    { "id": "4", "name": "مکث بین دسته‌ها", "type": "n8n-nodes-base.wait", "typeVersion": 1, "position": [900, 200],
+      "parameters": { "amount": 0.3, "unit": "seconds" } },
+
+    { "id": "5", "name": "تریگر فرم غیبت", "type": "n8n-nodes-base.formTrigger", "typeVersion": 2, "position": [180, 420],
+      "parameters": { "formTitle": "ثبت غیبت", "formFields": { "values": [
+        { "fieldLabel": "کد یکتای دانش‌آموز", "fieldType": "text", "requiredField": true }
+      ] } } },
+    { "id": "6", "name": "یافتن ولی غایب", "type": "n8n-nodes-base.postgres", "typeVersion": 2, "position": [420, 420],
+      "parameters": { "operation": "executeQuery",
+        "query": "SELECT p.chat_id, s.name FROM students s LEFT JOIN parents p ON p.student_id = s.id AND p.verified_at IS NOT NULL WHERE s.unique_code = $1",
+        "queryReplacement": "={{[$json['کد یکتای دانش‌آموز']]}}" },
+      "credentials": { "postgres": { "id": "school-postgres", "name": "PostgreSQL مدرسه" } } },
+    { "id": "7", "name": "ولی تأییدشده دارد؟", "type": "n8n-nodes-base.if", "typeVersion": 2, "position": [660, 420],
+      "parameters": { "conditions": { "conditions": [
+        { "leftValue": "={{$json.chat_id}}", "rightValue": "", "operator": { "type": "string", "operation": "notEquals" } }
+      ] } } },
+    { "id": "8", "name": "ارسال پیام غیبت", "type": "n8n-nodes-base.code", "typeVersion": 2, "position": [900, 340],
+      "parameters": { "jsCode": "function toJalali(gy, gm, gd) {\n  const g=[0,31,59,90,120,151,181,212,243,273,304,334];\n  let jy = gy<=1600?0:979; gy -= gy<=1600?621:1600;\n  const gy2 = gm>2?gy+1:gy;\n  let days = 365*gy+Math.floor((gy2+3)/4)-Math.floor((gy2+99)/100)+Math.floor((gy2+399)/400)-80+gd+g[gm-1];\n  jy += 33*Math.floor(days/12053); days %= 12053; jy += 4*Math.floor(days/1461); days %= 1461;\n  jy += Math.floor((days-1)/365); if (days>365) days=(days-1)%365;\n  const jm = days<186?1+Math.floor(days/31):7+Math.floor((days-186)/30);\n  const jd = 1+(days<186?days%31:(days-186)%30);\n  return {jy,jm,jd};\n}\nconst d = new Date();\nconst {jy,jm,jd} = toJalali(d.getUTCFullYear(), d.getUTCMonth()+1, d.getUTCDate());\nconst pad = n => String(n).padStart(2,'0');\nconst jalaliDate = `${jy}/${pad(jm)}/${pad(jd)}`;\nreturn $input.all().map(item => ({ json: { ...item.json, jalali_date: jalaliDate,\n  text: `غیبت ${item.json.name} در تاریخ ${jalaliDate} ثبت شد.` } }));" } },
+    { "id": "9", "name": "ارسال پیام غیبت به ولی", "type": "n8n-nodes-base.httpRequest", "typeVersion": 4, "position": [1140, 340],
+      "parameters": { "method": "POST", "url": "=https://api.telegram.org/bot{{$env.TELEGRAM_BOT_TOKEN}}/sendMessage", "sendBody": true,
+        "bodyParameters": { "parameters": [
+          { "name": "chat_id", "value": "={{$json.chat_id}}" },
+          { "name": "text", "value": "={{$json.text}}" }
+        ] } }, "continueOnFail": true },
+    { "id": "10", "name": "ثبت شکاف ولی نامعلوم", "type": "n8n-nodes-base.postgres", "typeVersion": 2, "position": [900, 500],
+      "parameters": { "operation": "executeQuery",
+        "query": "INSERT INTO error_log (workflow, node_name, message, chat_id) VALUES ('جریان سه - مدرسه به ولی', 'یافتن ولی غایب', 'غیبت ثبت شد اما ولی تأییدشده‌ای برای این دانش‌آموز پیدا نشد', NULL)" },
+      "credentials": { "postgres": { "id": "school-postgres", "name": "PostgreSQL مدرسه" } } },
+
+    { "id": "11", "name": "تریگر هفتگی", "type": "n8n-nodes-base.scheduleTrigger", "typeVersion": 1, "position": [180, 680],
+      "parameters": { "rule": { "interval": [{ "field": "cronExpression", "expression": "0 18 * * 4" }] } } },
+    { "id": "12", "name": "تعداد تیکت به تفکیک دسته", "type": "n8n-nodes-base.postgres", "typeVersion": 2, "position": [420, 620],
+      "parameters": { "operation": "executeQuery",
+        "query": "SELECT category, count(*) AS cnt FROM tickets WHERE created_at > now() - interval '7 days' GROUP BY category ORDER BY cnt DESC" },
+      "credentials": { "postgres": { "id": "school-postgres", "name": "PostgreSQL مدرسه" } } },
+    { "id": "13", "name": "میانگین زمان اولین پاسخ", "type": "n8n-nodes-base.postgres", "typeVersion": 2, "position": [420, 700],
+      "parameters": { "operation": "executeQuery",
+        "query": "SELECT s.name AS staff_name, avg(t.first_reply_at - t.created_at) AS avg_reply FROM tickets t JOIN staff s ON s.id = t.assignee_id WHERE t.first_reply_at IS NOT NULL AND t.created_at > now() - interval '7 days' GROUP BY s.name" },
+      "credentials": { "postgres": { "id": "school-postgres", "name": "PostgreSQL مدرسه" } } },
+    { "id": "14", "name": "تیکت‌های باز", "type": "n8n-nodes-base.postgres", "typeVersion": 2, "position": [420, 780],
+      "parameters": { "operation": "executeQuery", "query": "SELECT count(*) AS open_count FROM tickets WHERE status != 'بسته'" },
+      "credentials": { "postgres": { "id": "school-postgres", "name": "PostgreSQL مدرسه" } } },
+    { "id": "15", "name": "ترکیب گزارش", "type": "n8n-nodes-base.merge", "typeVersion": 3, "position": [660, 700],
+      "parameters": { "mode": "combine", "combinationMode": "multiplex" } },
+    { "id": "16", "name": "قالب‌بندی گزارش", "type": "n8n-nodes-base.code", "typeVersion": 2, "position": [900, 700],
+      "parameters": { "jsCode": "function toJalali(gy, gm, gd) {\n  const g=[0,31,59,90,120,151,181,212,243,273,304,334];\n  let jy = gy<=1600?0:979; gy -= gy<=1600?621:1600;\n  const gy2 = gm>2?gy+1:gy;\n  let days = 365*gy+Math.floor((gy2+3)/4)-Math.floor((gy2+99)/100)+Math.floor((gy2+399)/400)-80+gd+g[gm-1];\n  jy += 33*Math.floor(days/12053); days %= 12053; jy += 4*Math.floor(days/1461); days %= 1461;\n  jy += Math.floor((days-1)/365); if (days>365) days=(days-1)%365;\n  const jm = days<186?1+Math.floor(days/31):7+Math.floor((days-186)/30);\n  const jd = 1+(days<186?days%31:(days-186)%30);\n  return {jy,jm,jd};\n}\nconst d = new Date();\nconst {jy,jm,jd} = toJalali(d.getUTCFullYear(), d.getUTCMonth()+1, d.getUTCDate());\nconst pad = n => String(n).padStart(2,'0');\nconst jalaliDate = `${jy}/${pad(jm)}/${pad(jd)}`;\nconst byCategory = $('تعداد تیکت به تفکیک دسته').all().map(i => `${i.json.category}: ${i.json.cnt}`).join('\\n');\nconst topCategory = $('تعداد تیکت به تفکیک دسته').all()[0];\nconst byStaff = $('میانگین زمان اولین پاسخ').all().map(i => `${i.json.staff_name}: ${i.json.avg_reply}`).join('\\n');\nconst openCount = $('تیکت‌های باز').first().json.open_count;\nconst text = `گزارش هفتگی - ${jalaliDate}\\n\\nتعداد تیکت به تفکیک دسته:\\n${byCategory}\\n\\nمیانگین زمان اولین پاسخ:\\n${byStaff}\\n\\nتیکت‌های باز: ${openCount}\\n\\nپرتکرارترین موضوع: ${topCategory ? topCategory.json.category : 'ندارد'}`;\nreturn [{ json: { text } }];" } },
+    { "id": "17", "name": "ارسال گزارش به مدیر", "type": "n8n-nodes-base.httpRequest", "typeVersion": 4, "position": [1140, 700],
+      "parameters": { "method": "POST", "url": "=https://api.telegram.org/bot{{$env.TELEGRAM_BOT_TOKEN}}/sendMessage", "sendBody": true,
+        "bodyParameters": { "parameters": [
+          { "name": "chat_id", "value": "={{$env.PRINCIPAL_CHAT_ID}}" },
+          { "name": "text", "value": "={{$json.text}}" }
+        ] } }, "continueOnFail": true },
+
+    { "id": "18", "name": "بررسی خطای اطلاعیه", "type": "n8n-nodes-base.if", "typeVersion": 2, "position": [900, 140],
+      "parameters": { "conditions": { "conditions": [{ "leftValue": "={{$json.error}}", "rightValue": "", "operator": { "type": "string", "operation": "notEquals" } }] } } },
+    { "id": "19", "name": "ثبت خطای اطلاعیه", "type": "n8n-nodes-base.postgres", "typeVersion": 2, "position": [1140, 100],
+      "parameters": { "operation": "executeQuery",
+        "query": "INSERT INTO error_log (workflow, node_name, message, chat_id) VALUES ('جریان سه - مدرسه به ولی', 'ارسال اطلاعیه', $1, $2)",
+        "queryReplacement": "={{[$json.error, $json.chat_id]}}" },
+      "credentials": { "postgres": { "id": "school-postgres", "name": "PostgreSQL مدرسه" } } },
+
+    { "id": "20", "name": "بررسی خطای پیام غیبت", "type": "n8n-nodes-base.if", "typeVersion": 2, "position": [1380, 340],
+      "parameters": { "conditions": { "conditions": [{ "leftValue": "={{$json.error}}", "rightValue": "", "operator": { "type": "string", "operation": "notEquals" } }] } } },
+    { "id": "21", "name": "ثبت خطای پیام غیبت", "type": "n8n-nodes-base.postgres", "typeVersion": 2, "position": [1620, 340],
+      "parameters": { "operation": "executeQuery",
+        "query": "INSERT INTO error_log (workflow, node_name, message, chat_id) VALUES ('جریان سه - مدرسه به ولی', 'ارسال پیام غیبت به ولی', $1, $2)",
+        "queryReplacement": "={{[$json.error, $json.chat_id]}}" },
+      "credentials": { "postgres": { "id": "school-postgres", "name": "PostgreSQL مدرسه" } } },
+
+    { "id": "22", "name": "بررسی خطای گزارش هفتگی", "type": "n8n-nodes-base.if", "typeVersion": 2, "position": [1380, 700],
+      "parameters": { "conditions": { "conditions": [{ "leftValue": "={{$json.error}}", "rightValue": "", "operator": { "type": "string", "operation": "notEquals" } }] } } },
+    { "id": "23", "name": "ثبت خطای گزارش هفتگی", "type": "n8n-nodes-base.postgres", "typeVersion": 2, "position": [1620, 700],
+      "parameters": { "operation": "executeQuery",
+        "query": "INSERT INTO error_log (workflow, node_name, message, chat_id) VALUES ('جریان سه - مدرسه به ولی', 'ارسال گزارش به مدیر', $1, NULL)",
+        "queryReplacement": "={{[$json.error]}}" },
+      "credentials": { "postgres": { "id": "school-postgres", "name": "PostgreSQL مدرسه" } } }
+  ],
+  "connections": {
+    "تریگر فرم اطلاعیه": { "main": [[{ "node": "یافتن اولیای هدف", "type": "main", "index": 0 }]] },
+    "یافتن اولیای هدف": { "main": [[{ "node": "ارسال اطلاعیه", "type": "main", "index": 0 }]] },
+    "ارسال اطلاعیه": { "main": [[{ "node": "بررسی خطای اطلاعیه", "type": "main", "index": 0 }]] },
+    "بررسی خطای اطلاعیه": { "main": [
+      [{ "node": "ثبت خطای اطلاعیه", "type": "main", "index": 0 }],
+      [{ "node": "مکث بین دسته‌ها", "type": "main", "index": 0 }]
+    ] },
+    "ثبت خطای اطلاعیه": { "main": [[{ "node": "مکث بین دسته‌ها", "type": "main", "index": 0 }]] },
+
+    "تریگر فرم غیبت": { "main": [[{ "node": "یافتن ولی غایب", "type": "main", "index": 0 }]] },
+    "یافتن ولی غایب": { "main": [[{ "node": "ولی تأییدشده دارد؟", "type": "main", "index": 0 }]] },
+    "ولی تأییدشده دارد؟": { "main": [
+      [{ "node": "ارسال پیام غیبت", "type": "main", "index": 0 }],
+      [{ "node": "ثبت شکاف ولی نامعلوم", "type": "main", "index": 0 }]
+    ] },
+    "ارسال پیام غیبت": { "main": [[{ "node": "ارسال پیام غیبت به ولی", "type": "main", "index": 0 }]] },
+    "ارسال پیام غیبت به ولی": { "main": [[{ "node": "بررسی خطای پیام غیبت", "type": "main", "index": 0 }]] },
+    "بررسی خطای پیام غیبت": { "main": [[{ "node": "ثبت خطای پیام غیبت", "type": "main", "index": 0 }], []] },
+
+    "تریگر هفتگی": { "main": [[
+      { "node": "تعداد تیکت به تفکیک دسته", "type": "main", "index": 0 },
+      { "node": "میانگین زمان اولین پاسخ", "type": "main", "index": 0 },
+      { "node": "تیکت‌های باز", "type": "main", "index": 0 }
+    ]] },
+    "تعداد تیکت به تفکیک دسته": { "main": [[{ "node": "ترکیب گزارش", "type": "main", "index": 0 }]] },
+    "میانگین زمان اولین پاسخ": { "main": [[{ "node": "ترکیب گزارش", "type": "main", "index": 1 }]] },
+    "تیکت‌های باز": { "main": [[{ "node": "ترکیب گزارش", "type": "main", "index": 2 }]] },
+    "ترکیب گزارش": { "main": [[{ "node": "قالب‌بندی گزارش", "type": "main", "index": 0 }]] },
+    "قالب‌بندی گزارش": { "main": [[{ "node": "ارسال گزارش به مدیر", "type": "main", "index": 0 }]] },
+    "ارسال گزارش به مدیر": { "main": [[{ "node": "بررسی خطای گزارش هفتگی", "type": "main", "index": 0 }]] },
+    "بررسی خطای گزارش هفتگی": { "main": [[{ "node": "ثبت خطای گزارش هفتگی", "type": "main", "index": 0 }], []] }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "errorWorkflow": "flow-0-error-handler"
+  }
+}

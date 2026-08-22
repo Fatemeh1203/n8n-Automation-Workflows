@@ -1,0 +1,35 @@
+{
+  "name": "جریان صفر - مدیریت خطای مشترک",
+  "nodes": [
+    {
+      "id": "1",
+      "name": "تریگر خطا",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [200, 200],
+      "parameters": {}
+    },
+    {
+      "id": "2",
+      "name": "ثبت خطا در دیتابیس",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2,
+      "position": [460, 200],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO error_log (workflow, node_name, message, chat_id) VALUES ($1, $2, $3, NULL)",
+        "queryReplacement": "={{[$json.workflow.name, $json.execution.lastNodeExecuted, $json.execution.error.message]}}"
+      },
+      "continueOnFail": true,
+      "credentials": { "postgres": { "id": "school-postgres", "name": "PostgreSQL مدرسه" } }
+    }
+  ],
+  "connections": {
+    "تریگر خطا": {
+      "main": [[{ "node": "ثبت خطا در دیتابیس", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

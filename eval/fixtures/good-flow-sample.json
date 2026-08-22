@@ -1,0 +1,16 @@
+{
+  "name": "نمونه-جریان-صحیح",
+  "nodes": [
+    {"id": "1", "name": "تریگر زمان‌بندی", "type": "n8n-nodes-base.scheduleTrigger", "parameters": {}},
+    {"id": "2", "name": "دریافت پیام‌های تلگرام", "type": "n8n-nodes-base.httpRequest", "parameters": {"url": "https://api.telegram.org/bot{{$env.TELEGRAM_BOT_TOKEN}}/getUpdates"}},
+    {"id": "3", "name": "بررسی احراز هویت", "type": "n8n-nodes-base.if", "parameters": {"conditions": {"string": [{"value1": "={{$json.verified_at}}", "operation": "isNotEmpty"}]}}},
+    {"id": "4", "name": "ثبت تیکت", "type": "n8n-nodes-base.postgres", "parameters": {"query": "INSERT INTO tickets (student_id, category, body, update_id) VALUES ($1, $2, $3, $4) ON CONFLICT (update_id) DO NOTHING"}},
+    {"id": "5", "name": "ارسال پیام خطای عمومی", "type": "n8n-nodes-base.httpRequest", "parameters": {"url": "https://api.telegram.org/bot{{$env.TELEGRAM_BOT_TOKEN}}/sendMessage", "body": {"text": "متأسفانه مشکلی پیش آمد؛ لطفاً کمی بعد دوباره تلاش کنید."}}}
+  ],
+  "connections": {
+    "تریگر زمان‌بندی": {"main": [[{"node": "دریافت پیام‌های تلگرام", "type": "main", "index": 0}]]},
+    "دریافت پیام‌های تلگرام": {"main": [[{"node": "بررسی احراز هویت", "type": "main", "index": 0}]]},
+    "بررسی احراز هویت": {"main": [[{"node": "ثبت تیکت", "type": "main", "index": 0}], [{"node": "ارسال پیام خطای عمومی", "type": "main", "index": 0}]]}
+  },
+  "settings": {"errorWorkflow": "flow-0-error-handler"}
+}
