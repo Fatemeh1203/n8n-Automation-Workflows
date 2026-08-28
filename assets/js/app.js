@@ -104,6 +104,18 @@
           </div>
           <div class="project-grid">${window.PROJECTS.map(projectCard).join("")}</div>
         </div>
+      </section>
+
+      <section class="section">
+        <div class="wrap">
+          <a class="sabt-banner" href="sabt/">
+            <div class="sabt-copy">
+              <h3>${window.t("sabtTitle")}</h3>
+              <p>${window.t("sabtBody")}</p>
+            </div>
+            <span class="sabt-cta">${window.t("sabtCta")}</span>
+          </a>
+        </div>
       </section>`;
   }
 

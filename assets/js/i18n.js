@@ -52,6 +52,10 @@ window.I18N = {
     aboutCard3Body: "کل رابط کاربری و توضیح نودها به فارسی و انگلیسی است و جهت صفحه خودکار تغییر می‌کند.",
 
     navContact: "ارتباط با من",
+    navSabt: "ثبت روزانه آموزشگاه",
+    sabtTitle: "آموزشگاه علمی فردا — صفحه‌ی ثبت روزانه",
+    sabtBody: "این یکی دمو نیست؛ سیستم حسابداری واقعی آموزشگاه است. همکاران از این صفحه واریزی، هزینه و کلاس‌های برگزارشده را ثبت می‌کنند و هر ثبت اول برای تأیید مدیر به تلگرام می‌رود.",
+    sabtCta: "باز کردن صفحه‌ی ثبت",
     footerBy: "ساخته‌شده توسط",
     ownerName: "فاطمه شمس",
     ownerRole: "طراح و توسعه‌دهنده‌ی اتوماسیون با n8n",
@@ -124,6 +128,10 @@ window.I18N = {
     aboutCard3Body: "The entire interface and every node description exist in Persian and English, with automatic text direction.",
 
     navContact: "Contact",
+    navSabt: "Farda School — daily entry",
+    sabtTitle: "Farda School — daily entry page",
+    sabtBody: "Not a demo: this is the school's live bookkeeping system. Staff record payments, expenses and classes here, and every entry goes to the manager on Telegram for approval before it lands in the ledger.",
+    sabtCta: "Open the entry page",
     footerBy: "Built by",
     ownerName: "Fatemeh Shams",
     ownerRole: "n8n automation designer & developer",
