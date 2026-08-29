@@ -7,177 +7,282 @@
 <title>آموزشگاه علمی فردا — ثبت روزانه</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Kufi+Arabic:wght@500;700&family=Vazirmatn:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=Gulzar&display=swap">
 <style>
 :root{
-  --ground:#F6F7FB; --surface:#FFFFFF; --surface-2:#EFF1F8;
-  --ink:#171A2B; --ink-2:#5A6076; --ink-3:#8B90A6;
-  --line:#E2E4EE; --line-2:#EDEFF6;
-  --accent:#33418C; --accent-soft:#E6E9F7;
-  --brass:#B5761F; --brass-soft:#F7EDDC;
-  --shadow:0 1px 2px rgba(23,26,43,.05), 0 8px 24px -16px rgba(23,26,43,.28);
-  --r:12px;
+  --bg:#F1F7F7; --surface:#FFFFFF; --surface-2:#EAF4F3;
+  --ink:#26383F; --ink-2:#5B7580; --ink-3:#93A9B0;
+  --line:#DBEAEA; --line-2:#EAF2F2;
+  --blue:#6FB0D2; --blue-soft:#E4F1F8; --blue-deep:#3B6E8B;
+  --green:#84CBAE; --green-soft:#E5F5EE; --green-deep:#3E7C64;
+  --shadow:0 1px 2px rgba(38,56,63,.04), 0 12px 30px -18px rgba(38,56,63,.22);
+  --r:18px;
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
-    --ground:#0E1019; --surface:#171A2B; --surface-2:#1F2337;
-    --ink:#E8EAF3; --ink-2:#9AA0B8; --ink-3:#6E7490;
-    --line:#282D44; --line-2:#1E2235;
-    --accent:#93A0E8; --accent-soft:#1B2143;
-    --brass:#DCA954; --brass-soft:#33280F;
-    --shadow:0 1px 2px rgba(0,0,0,.5), 0 10px 30px -18px rgba(0,0,0,.9);
+    --bg:#0F1719; --surface:#162126; --surface-2:#1B292E;
+    --ink:#E6F0F0; --ink-2:#9DB5BC; --ink-3:#6B858C;
+    --line:#243237; --line-2:#1B272B;
+    --blue:#7FBEDD; --blue-soft:#16303B; --blue-deep:#A9D6EC;
+    --green:#8FD5B9; --green-soft:#153029; --green-deep:#AEE3CC;
+    --shadow:0 1px 2px rgba(0,0,0,.5), 0 14px 34px -20px rgba(0,0,0,.85);
   }
 }
 :root[data-theme="dark"]{
-  --ground:#0E1019; --surface:#171A2B; --surface-2:#1F2337;
-  --ink:#E8EAF3; --ink-2:#9AA0B8; --ink-3:#6E7490;
-  --line:#282D44; --line-2:#1E2235;
-  --accent:#93A0E8; --accent-soft:#1B2143;
-  --brass:#DCA954; --brass-soft:#33280F;
-  --shadow:0 1px 2px rgba(0,0,0,.5), 0 10px 30px -18px rgba(0,0,0,.9);
+  --bg:#0F1719; --surface:#162126; --surface-2:#1B292E;
+  --ink:#E6F0F0; --ink-2:#9DB5BC; --ink-3:#6B858C;
+  --line:#243237; --line-2:#1B272B;
+  --blue:#7FBEDD; --blue-soft:#16303B; --blue-deep:#A9D6EC;
+  --green:#8FD5B9; --green-soft:#153029; --green-deep:#AEE3CC;
+  --shadow:0 1px 2px rgba(0,0,0,.5), 0 14px 34px -20px rgba(0,0,0,.85);
 }
 *{box-sizing:border-box}
+html{scroll-behavior:smooth}
 body{
-  margin:0; background:var(--ground); color:var(--ink);
+  margin:0; min-height:100vh; background:var(--bg); color:var(--ink);
   font-family:'Vazirmatn',system-ui,-apple-system,'Segoe UI',sans-serif;
-  font-size:16px; line-height:1.75; direction:rtl; text-align:right;
+  font-size:16px; line-height:1.8; direction:rtl; text-align:right;
   -webkit-font-smoothing:antialiased;
+  background-image:
+    radial-gradient(60% 45% at 85% -5%, var(--blue-soft) 0%, transparent 60%),
+    radial-gradient(55% 40% at 5% 8%, var(--green-soft) 0%, transparent 55%);
+  background-attachment:fixed;
 }
-.wrap{max-width:760px; margin:0 auto; padding:0 18px}
-h1,h2{font-family:'Noto Kufi Arabic','Vazirmatn',sans-serif; margin:0; text-wrap:balance; line-height:1.45}
-h1{font-size:clamp(24px,5vw,34px); font-weight:700; letter-spacing:-.01em}
-h2{font-size:15px; font-weight:700}
+html[lang="en"] body{font-family:'Inter',system-ui,sans-serif}
+.wrap{max-width:720px; margin:0 auto; padding:0 20px}
 a{color:inherit}
-.mono{font-family:'IBM Plex Mono','Vazirmatn',ui-monospace,monospace; font-size:.82em; direction:ltr; unicode-bidi:embed}
-:focus-visible{outline:2px solid var(--brass); outline-offset:3px; border-radius:8px}
+:focus-visible{outline:2px solid var(--blue-deep); outline-offset:3px; border-radius:10px}
 
-.top{background:var(--surface); border-bottom:1px solid var(--line); padding:30px 0 24px}
-.eyebrow{font-size:11.5px; letter-spacing:.18em; color:var(--ink-3); font-weight:700; margin-bottom:10px}
-.lede{color:var(--ink-2); font-size:15px; margin:10px 0 0; max-width:56ch}
-.hint{display:inline-flex; align-items:center; gap:7px; margin-top:16px; padding:7px 13px;
-  background:var(--brass-soft); color:var(--brass); border-radius:999px; font-size:13px; font-weight:500}
+/* top bar */
+.bar{display:flex; align-items:center; justify-content:flex-start; padding:18px 0 0}
+.langbtn{
+  display:inline-flex; align-items:center; gap:7px;
+  border:1px solid var(--line); background:var(--surface); color:var(--ink-2);
+  font-family:inherit; font-size:13px; font-weight:600; padding:7px 14px; border-radius:999px;
+  cursor:pointer; transition:border-color .18s, color .18s, background .18s; box-shadow:var(--shadow);
+}
+.langbtn:hover{border-color:var(--blue); color:var(--blue-deep)}
+.langbtn svg{width:15px; height:15px; fill:none; stroke:currentColor; stroke-width:1.7}
 
-section{margin-top:34px}
-.shead{display:flex; align-items:baseline; gap:11px; margin-bottom:12px}
-.freq{font-size:11px; font-weight:700; letter-spacing:.06em; padding:3px 9px; border-radius:6px;
-  background:var(--surface-2); color:var(--ink-2); white-space:nowrap}
-.srule{flex:1; height:1px; background:var(--line)}
+/* header / emblem */
+.hero{text-align:center; padding:14px 0 6px}
+.emblem{width:150px; height:150px; margin:6px auto 14px; display:block}
+.school{font-size:clamp(22px,4.6vw,29px); font-weight:700; letter-spacing:-.01em; margin:0}
+.tagline{color:var(--ink-2); font-size:14.5px; margin:6px 0 0}
+.mgr{
+  display:inline-flex; align-items:center; gap:8px; margin-top:16px;
+  padding:6px 15px; border-radius:999px; font-size:13px; font-weight:600;
+  background:var(--surface); border:1px solid var(--line); color:var(--ink-2); box-shadow:var(--shadow);
+}
+.mgr .ring{width:9px; height:9px; border-radius:50%;
+  background:conic-gradient(from 200deg, var(--blue), var(--green), var(--blue)); flex:none}
+.mgr b{color:var(--ink); font-weight:700}
 
-.tiles{display:grid; grid-template-columns:1fr 1fr; gap:12px}
-@media (max-width:560px){ .tiles{grid-template-columns:1fr} }
-.tile{display:block; background:var(--surface); border:1px solid var(--line); border-radius:var(--r);
-  padding:20px 18px; text-decoration:none; box-shadow:var(--shadow); transition:border-color .15s, transform .15s}
-.tile:hover{border-color:var(--accent); transform:translateY(-1px)}
-.tile .t{font-family:'Noto Kufi Arabic','Vazirmatn',sans-serif; font-size:19px; font-weight:700; margin-bottom:5px}
-.tile .d{color:var(--ink-2); font-size:13.5px; line-height:1.6}
-.tile .u{margin-top:12px; color:var(--accent); font-weight:500}
+.lead{color:var(--ink-2); font-size:14.5px; text-align:center; max-width:44ch; margin:18px auto 0}
 
-.rows{background:var(--surface); border:1px solid var(--line); border-radius:var(--r); overflow:hidden}
-.row{display:flex; align-items:flex-start; gap:14px; padding:15px 17px; border-bottom:1px solid var(--line-2)}
-.row:last-child{border-bottom:0}
-.row .meta{flex:1; min-width:0}
-.row .t{font-weight:700; font-size:15.5px}
-.row .d{color:var(--ink-2); font-size:13px; margin-top:2px}
-.row .u{margin-top:7px; display:flex; align-items:center; gap:8px; flex-wrap:wrap}
-.row .u a{color:var(--accent); text-decoration:none; word-break:break-all}
-.row .u a:hover{text-decoration:underline}
-.copy{border:1px solid var(--line); background:var(--surface-2); color:var(--ink-2);
-  font-family:inherit; font-size:12px; padding:3px 10px; border-radius:7px; cursor:pointer; white-space:nowrap}
-.copy:hover{border-color:var(--accent); color:var(--accent)}
-.copy[data-done="1"]{background:var(--accent-soft); border-color:var(--accent); color:var(--accent)}
+/* section label */
+.slabel{display:flex; align-items:center; gap:12px; margin:34px 4px 14px}
+.slabel span{font-size:12px; font-weight:700; letter-spacing:.08em; color:var(--ink-3); white-space:nowrap}
+.slabel::after{content:""; flex:1; height:1px; background:var(--line)}
 
-.rules{background:var(--surface); border:1px solid var(--line); border-radius:var(--r); padding:18px 20px; margin-top:34px}
-.rules h2{margin-bottom:8px}
-.rules ul{margin:8px 0 0; padding-inline-start:20px; color:var(--ink-2); font-size:13.5px}
-.rules li{margin-bottom:6px}
-.rules b{color:var(--ink)}
-footer{margin:44px 0 34px; color:var(--ink-3); font-size:12px; text-align:center}
+/* cards */
+.grid{display:grid; grid-template-columns:1fr 1fr; gap:14px}
+@media (max-width:540px){ .grid{grid-template-columns:1fr} }
+.card{
+  display:block; background:var(--surface); border:1px solid var(--line); border-radius:var(--r);
+  padding:22px 20px; text-decoration:none; color:inherit; box-shadow:var(--shadow);
+  transition:transform .18s ease, border-color .18s ease, box-shadow .18s ease; position:relative; overflow:hidden;
+}
+.card::before{content:""; position:absolute; inset-inline-start:0; top:0; bottom:0; width:4px;
+  background:var(--accent); opacity:.9}
+.card:hover{transform:translateY(-3px); border-color:var(--accent); box-shadow:0 1px 2px rgba(38,56,63,.05), 0 20px 40px -22px rgba(38,56,63,.4)}
+.card .ic{width:44px; height:44px; border-radius:13px; display:grid; place-items:center; margin-bottom:13px;
+  background:var(--accent-soft)}
+.card .ic svg{width:22px; height:22px; fill:none; stroke:var(--accent-deep); stroke-width:1.7; stroke-linecap:round; stroke-linejoin:round}
+.card h3{margin:0 0 5px; font-size:17px; font-weight:700}
+.card p{margin:0; color:var(--ink-2); font-size:13px; line-height:1.7}
+.card .go{margin-top:14px; display:inline-flex; align-items:center; gap:6px; font-size:13px; font-weight:600; color:var(--accent-deep)}
+.card .go svg{width:14px; height:14px; fill:none; stroke:currentColor; stroke-width:2}
+html[dir="rtl"] .card .go svg{transform:scaleX(-1)}
+
+.c-blue{--accent:var(--blue); --accent-soft:var(--blue-soft); --accent-deep:var(--blue-deep)}
+.c-green{--accent:var(--green); --accent-soft:var(--green-soft); --accent-deep:var(--green-deep)}
+.card.wide{grid-column:1 / -1}
+
+/* notes */
+.notes{background:var(--surface); border:1px solid var(--line); border-radius:var(--r); padding:20px 22px; margin-top:16px; box-shadow:var(--shadow)}
+.notes h4{margin:0 0 10px; font-size:14px; font-weight:700; display:flex; align-items:center; gap:8px}
+.notes h4 .dot{width:8px; height:8px; border-radius:50%; background:var(--green); flex:none}
+.notes ul{margin:0; padding-inline-start:20px; color:var(--ink-2); font-size:13px; line-height:1.95}
+.notes li{margin-bottom:5px}
+.notes b{color:var(--ink)}
+.pill{font-family:'Inter',ui-monospace,monospace; font-size:.82em; direction:ltr; unicode-bidi:embed;
+  background:var(--surface-2); border:1px solid var(--line-2); border-radius:6px; padding:1px 7px}
+
+.login{display:flex; align-items:flex-start; gap:12px; margin-top:16px; padding:15px 18px;
+  background:var(--blue-soft); border:1px solid var(--blue); border-radius:14px; font-size:13.5px; color:var(--ink)}
+.login svg{width:20px; height:20px; flex:none; margin-top:2px; fill:none; stroke:var(--blue-deep); stroke-width:1.7}
+
+footer{margin:40px 0 34px; text-align:center; color:var(--ink-3); font-size:12px; line-height:1.9}
+footer b{color:var(--ink-2)}
 @media (prefers-reduced-motion: reduce){ *{transition:none !important} }
 </style>
 </head>
 <body>
 
-<div class="top">
-  <div class="wrap">
-    <div class="eyebrow">ثبت روزانه</div>
-    <h1>آموزشگاه علمی فردا</h1>
-    <p class="lede">هر واریزی، هزینه و کلاسی که در آموزشگاه اتفاق می‌افتد از همین‌جا ثبت می‌شود. لینک را روی گوشی بوکمارک کنید.</p>
-    <div class="hint">هر ثبتی که اینجا می‌کنید اول برای تأیید مدیر می‌رود</div>
-  </div>
-</div>
-
 <div class="wrap">
 
-  <section>
-    <div class="shead"><h2>پول</h2><span class="freq">هر روز</span><span class="srule"></span></div>
-    <div class="tiles">
-      <a class="tile" href="https://arezoo000.app.n8n.cloud/form/daramad-farda" target="_blank" rel="noopener">
-        <div class="t">ثبت واریزی</div>
-        <div class="d">شهریه شاگرد، پرداخت مدرسه یا مجموعه همکار. دوره و مدرس را می‌پرسد و سهم مدرس را همان‌جا قفل می‌کند. عکس فیش را هم بگیرید.</div>
-        <div class="u mono">/form/daramad-farda</div>
-      </a>
-      <a class="tile" href="https://arezoo000.app.n8n.cloud/form/hazine-farda" target="_blank" rel="noopener">
-        <div class="t">ثبت هزینه</div>
-        <div class="d">اجاره، قبوض، تبلیغات و هر خرج دیگر. عکس یا PDF فاکتور را هم می‌گیرد.</div>
-        <div class="u mono">/form/hazine-farda</div>
-      </a>
-    </div>
-  </section>
+  <div class="bar">
+    <button class="langbtn" id="lang" type="button" aria-label="Switch language">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.5 2.5 15 0 18M12 3c-2.5 2.5-2.5 15 0 18"/></svg>
+      <span id="langLabel">English</span>
+    </button>
+  </div>
 
-  <section>
-    <div class="shead"><h2>کلاس‌ها</h2><span class="freq">هفتگی</span><span class="srule"></span></div>
-    <div class="rows">
-      <div class="row">
-        <div class="meta">
-          <div class="t">کلاس برگزارشده و برنامه هفتگی شاگرد</div>
-          <div class="d">یک لینک، دو کار: ثبت کلاسی که برگزار شد یا لغو شد، و ثبت برنامه کلاسی هر شاگرد در برنامه هفتگی آموزشگاه.</div>
-          <div class="u"><a class="mono" href="https://arezoo000.app.n8n.cloud/form/sabt-farda" target="_blank" rel="noopener">https://arezoo000.app.n8n.cloud/form/sabt-farda</a><button class="copy" data-copy="https://arezoo000.app.n8n.cloud/form/sabt-farda">کپی</button></div>
-        </div>
-      </div>
-    </div>
-  </section>
+  <header class="hero">
+    <svg class="emblem" viewBox="0 0 200 200" role="img" aria-label="آموزشگاه فردا">
+      <defs>
+        <linearGradient id="ring" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="var(--blue)"/>
+          <stop offset="1" stop-color="var(--green)"/>
+        </linearGradient>
+      </defs>
+      <circle cx="100" cy="98" r="82" fill="none" stroke="url(#ring)" stroke-width="2.4" stroke-linecap="round" stroke-dasharray="352 40" transform="rotate(-42 100 98)"/>
+      <circle cx="150" cy="46" r="4.4" fill="var(--green-deep)"/>
+      <text x="100" y="118" text-anchor="middle" font-family="'Gulzar','Vazirmatn',serif" font-size="74" fill="var(--ink)">فردا</text>
+      <line x1="46" y1="150" x2="154" y2="150" stroke="var(--line)" stroke-width="1.5"/>
+    </svg>
 
-  <div class="rules">
-    <h2>چند نکته که کار را درست نگه می‌دارد</h2>
+    <h1 class="school" data-i18n="school">آموزشگاه علمی فردا</h1>
+    <p class="tagline" data-i18n="tagline">از امروز به فردا بیایید</p>
+
+    <div class="mgr"><span class="ring"></span><span data-i18n="mgrLabel">مدیر آموزشگاه:</span> <b data-i18n="mgrName">فاطمه شمس</b></div>
+
+    <p class="lead" data-i18n="lead">هر واریزی، هزینه و کلاسی که در آموزشگاه اتفاق می‌افتد از همین‌جا ثبت می‌شود. لینک را روی گوشی بوکمارک کنید.</p>
+  </header>
+
+  <div class="slabel"><span data-i18n="secMoney">ثبت روزانه</span></div>
+
+  <div class="grid">
+    <a class="card c-blue" href="https://arezoo000.app.n8n.cloud/form/daramad-farda" target="_blank" rel="noopener">
+      <div class="ic"><svg viewBox="0 0 24 24"><path d="M12 3v18M7 8h7a3 3 0 0 1 0 6H8m9 4H10a3 3 0 0 1-3-3"/></svg></div>
+      <h3 data-i18n="incomeT">ثبت واریزی</h3>
+      <p data-i18n="incomeD">شهریه شاگرد، پرداخت مدرسه یا مجموعه همکار. دوره و مدرس را می‌پرسد و سهم مدرس را همان‌جا قفل می‌کند.</p>
+      <span class="go" data-i18n="open">باز کردن فرم <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+    </a>
+    <a class="card c-green" href="https://arezoo000.app.n8n.cloud/form/hazine-farda" target="_blank" rel="noopener">
+      <div class="ic"><svg viewBox="0 0 24 24"><path d="M4 7h16v12H4zM4 10h16M8 15h4"/></svg></div>
+      <h3 data-i18n="expenseT">ثبت هزینه</h3>
+      <p data-i18n="expenseD">اجاره، قبوض، تبلیغات و هر خرج دیگر. عکس یا PDF فاکتور را هم می‌گیرد.</p>
+      <span class="go" data-i18n="open">باز کردن فرم <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+    </a>
+  </div>
+
+  <div class="slabel"><span data-i18n="secClass">کلاس‌ها و برنامه</span></div>
+
+  <div class="grid">
+    <a class="card c-blue wide" href="https://arezoo000.app.n8n.cloud/form/sabt-farda" target="_blank" rel="noopener">
+      <div class="ic"><svg viewBox="0 0 24 24"><path d="M4 5h16v15H4zM4 9h16M8 3v4M16 3v4M8 13h3M8 17h6"/></svg></div>
+      <h3 data-i18n="classT">کلاس برگزارشده و برنامه هفتگی شاگرد</h3>
+      <p data-i18n="classD">یک لینک، دو کار: ثبت کلاسی که برگزار شد یا لغو شد، و ثبت برنامه کلاسی هر شاگرد در برنامه هفتگی آموزشگاه.</p>
+      <span class="go" data-i18n="open">باز کردن فرم <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+    </a>
+  </div>
+
+  <div class="login">
+    <svg viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+    <span data-i18n="loginNote">برای باز کردن هر فرم، مرورگر یک نام کاربری و رمز می‌خواهد. آن را از مدیر بگیرید. مرورگر یک بار می‌پرسد و بعد یادش می‌ماند.</span>
+  </div>
+
+  <div class="notes">
+    <h4><span class="dot"></span><span data-i18n="tipsT">چند نکته که کار را درست نگه می‌دارد</span></h4>
     <ul>
-      <li><b>مبلغ را با نقطه بنویسید:</b> <span class="mono">20.000.000</span>. بدون نقطه هم خوانده می‌شود، ولی با نقطه اشتباه کمتر می‌شود.</li>
-      <li><b>نام خودتان را در «ثبت‌کننده» بنویسید.</b> اینکه چه کسی ثبت کرده در دفتر می‌ماند.</li>
-      <li><b>فیلدهای ستاره‌دار اجباری‌اند.</b> تا پرشان نکنید فرم ارسال نمی‌شود.</li>
-      <li><b>عکس فیش یا فاکتور را همان لحظه بگیرید.</b> بعداً پیدا کردنش سخت می‌شود.</li>
-      <li>هر ثبتی اول برای مدیر می‌رود و بعد از تأیید در دفتر می‌نشیند. اگر اشتباه ثبت کردید، به مدیر بگویید تا ردش کند.</li>
+      <li data-i18n="tip1"><b>مبلغ را با نقطه بنویسید:</b> <span class="pill">20.000.000</span>. بدون نقطه هم خوانده می‌شود، ولی با نقطه اشتباه کمتر می‌شود.</li>
+      <li data-i18n="tip2"><b>نام خودتان را در «ثبت‌کننده» بنویسید.</b> اینکه چه کسی ثبت کرده در دفتر می‌ماند.</li>
+      <li data-i18n="tip3"><b>فیلدهای ستاره‌دار اجباری‌اند.</b> تا پرشان نکنید فرم ارسال نمی‌شود.</li>
+      <li data-i18n="tip4"><b>عکس فیش یا فاکتور را همان لحظه بگیرید.</b> بعداً پیدا کردنش سخت می‌شود.</li>
+      <li data-i18n="tip5">هر ثبتی اول برای مدیر می‌رود و بعد از تأیید در دفتر می‌نشیند.</li>
     </ul>
   </div>
 
-  <footer>آموزشگاه علمی فردا — همه مبالغ به تومان</footer>
+  <footer>
+    <div data-i18n="footMgr">مدیر: <b>فاطمه شمس</b> · آموزشگاه علمی فردا</div>
+    <div data-i18n="footNote">همه مبالغ به تومان — منطقه زمانی تهران</div>
+  </footer>
 </div>
 
 <script>
-document.addEventListener('click', function (e) {
-  var b = e.target.closest('.copy');
-  if (!b) return;
-  var text = b.getAttribute('data-copy');
-  var done = function () {
-    var old = b.textContent;
-    b.textContent = 'کپی شد';
-    b.setAttribute('data-done', '1');
-    setTimeout(function () { b.textContent = old; b.removeAttribute('data-done'); }, 1600);
-  };
-  function fallback() {
-    try {
-      var ta = document.createElement('textarea');
-      ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
-      document.body.appendChild(ta); ta.select();
-      document.execCommand('copy'); document.body.removeChild(ta);
-      done();
-    } catch (e2) {
-      b.textContent = 'دستی کپی کنید';
-      setTimeout(function () { b.textContent = 'کپی'; }, 1800);
-    }
+var I18N = {
+  fa: {
+    _dir:"rtl", _lang:"fa", langLabel:"English",
+    school:"آموزشگاه علمی فردا", tagline:"از امروز به فردا بیایید",
+    mgrLabel:"مدیر آموزشگاه:", mgrName:"فاطمه شمس",
+    lead:"هر واریزی، هزینه و کلاسی که در آموزشگاه اتفاق می‌افتد از همین‌جا ثبت می‌شود. لینک را روی گوشی بوکمارک کنید.",
+    secMoney:"ثبت روزانه", secClass:"کلاس‌ها و برنامه",
+    incomeT:"ثبت واریزی",
+    incomeD:"شهریه شاگرد، پرداخت مدرسه یا مجموعه همکار. دوره و مدرس را می‌پرسد و سهم مدرس را همان‌جا قفل می‌کند.",
+    expenseT:"ثبت هزینه",
+    expenseD:"اجاره، قبوض، تبلیغات و هر خرج دیگر. عکس یا PDF فاکتور را هم می‌گیرد.",
+    classT:"کلاس برگزارشده و برنامه هفتگی شاگرد",
+    classD:"یک لینک، دو کار: ثبت کلاسی که برگزار شد یا لغو شد، و ثبت برنامه کلاسی هر شاگرد در برنامه هفتگی آموزشگاه.",
+    open:'باز کردن فرم <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>',
+    loginNote:"برای باز کردن هر فرم، مرورگر یک نام کاربری و رمز می‌خواهد. آن را از مدیر بگیرید. مرورگر یک بار می‌پرسد و بعد یادش می‌ماند.",
+    tipsT:"چند نکته که کار را درست نگه می‌دارد",
+    tip1:'<b>مبلغ را با نقطه بنویسید:</b> <span class="pill">20.000.000</span>. بدون نقطه هم خوانده می‌شود، ولی با نقطه اشتباه کمتر می‌شود.',
+    tip2:"<b>نام خودتان را در «ثبت‌کننده» بنویسید.</b> اینکه چه کسی ثبت کرده در دفتر می‌ماند.",
+    tip3:"<b>فیلدهای ستاره‌دار اجباری‌اند.</b> تا پرشان نکنید فرم ارسال نمی‌شود.",
+    tip4:"<b>عکس فیش یا فاکتور را همان لحظه بگیرید.</b> بعداً پیدا کردنش سخت می‌شود.",
+    tip5:"هر ثبتی اول برای مدیر می‌رود و بعد از تأیید در دفتر می‌نشیند.",
+    footMgr:"مدیر: <b>فاطمه شمس</b> · آموزشگاه علمی فردا",
+    footNote:"همه مبالغ به تومان — منطقه زمانی تهران"
+  },
+  en: {
+    _dir:"ltr", _lang:"en", langLabel:"فارسی",
+    school:"Farda Academy", tagline:"Step from today into tomorrow",
+    mgrLabel:"Managed by:", mgrName:"Fatemeh Shams",
+    lead:"Every payment, expense and class at the academy is recorded from here. Bookmark this link on your phone.",
+    secMoney:"Daily entry", secClass:"Classes & schedule",
+    incomeT:"Record a payment",
+    incomeD:"Student tuition, a school or partner payment. Asks for the course and teacher, and locks the teacher's share on the spot.",
+    expenseT:"Record an expense",
+    expenseD:"Rent, bills, advertising and any other cost. Takes a photo or PDF of the receipt too.",
+    classT:"Held class & student weekly schedule",
+    classD:"One link, two jobs: log a class that was held or cancelled, and register each student's class in the academy's weekly schedule.",
+    open:'Open form <svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg>',
+    loginNote:"To open any form the browser asks for a username and password. Get it from the manager. The browser asks once, then remembers.",
+    tipsT:"A few tips that keep things tidy",
+    tip1:'<b>Write amounts with dots:</b> <span class="pill">20.000.000</span>. It reads without them too, but dots prevent mistakes.',
+    tip2:"<b>Put your own name in “recorded by”.</b> Who entered it stays in the ledger.",
+    tip3:"<b>Starred fields are required.</b> The form won't submit until they're filled.",
+    tip4:"<b>Photograph the receipt right away.</b> It's hard to find later.",
+    tip5:"Every entry goes to the manager first and lands in the ledger only after approval.",
+    footMgr:"Manager: <b>Fatemeh Shams</b> · Farda Academy",
+    footNote:"All amounts in Toman — Tehran time"
   }
-  try {
-    navigator.clipboard.writeText(text).then(done, fallback);
-  } catch (err) { fallback(); }
-});
+};
+
+function apply(lang){
+  var d = I18N[lang];
+  document.documentElement.lang = d._lang;
+  document.documentElement.dir = d._dir;
+  document.body.style.textAlign = d._dir === "rtl" ? "right" : "left";
+  document.querySelectorAll("[data-i18n]").forEach(function(el){
+    var k = el.getAttribute("data-i18n");
+    if (d[k] != null) el.innerHTML = d[k];
+  });
+  document.getElementById("langLabel").textContent = d.langLabel;
+  try { localStorage.setItem("farda-sabt-lang", lang); } catch(e){}
+}
+
+(function(){
+  var lang = "fa";
+  try { var s = localStorage.getItem("farda-sabt-lang"); if (s === "en" || s === "fa") lang = s; } catch(e){}
+  apply(lang);
+  document.getElementById("lang").addEventListener("click", function(){
+    lang = (document.documentElement.lang === "fa") ? "en" : "fa";
+    apply(lang);
+  });
+})();
 </script>
 </body>
 </html>
