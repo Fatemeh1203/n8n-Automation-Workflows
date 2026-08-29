@@ -96,17 +96,7 @@
         </div>
       </section>
 
-      <section class="section">
-        <div class="wrap">
-          <div class="section-head">
-            <h2>${window.t("projectsTitle")}</h2>
-            <p>${window.t("projectsSub")}</p>
-          </div>
-          <div class="project-grid">${window.PROJECTS.map(projectCard).join("")}</div>
-        </div>
-      </section>
-
-      <section class="section">
+      <section class="section" style="padding-top:0">
         <div class="wrap">
           <a class="sabt-banner" href="sabt/">
             <div class="sabt-copy">
@@ -115,6 +105,16 @@
             </div>
             <span class="sabt-cta">${window.t("sabtCta")}</span>
           </a>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="wrap">
+          <div class="section-head">
+            <h2>${window.t("projectsTitle")}</h2>
+            <p>${window.t("projectsSub")}</p>
+          </div>
+          <div class="project-grid">${window.PROJECTS.map(projectCard).join("")}</div>
         </div>
       </section>`;
   }
