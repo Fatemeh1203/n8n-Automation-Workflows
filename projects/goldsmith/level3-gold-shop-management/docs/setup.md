@@ -2,34 +2,47 @@
 
 # 🛠️ راهنمای راه‌اندازی — سیستم مدیریت طلافروشی (سطح ۳)
 
-## گام ۱ — پایگاه داده (سه Data Table)
+## گام ۱ — پایگاه داده (Data Table)
 
 <div dir="ltr">
 
 | Table | Columns |
 |---|---|
 | `gs_inventory` | `code, title, category, weight#, karat#, weight750#, buyRate18#, makingCost#, buyCost#, buyDay, supplier, status, soldTx, note` |
-| `gs_transactions` | `code, type, day, dateFa, itemCode, title, weight750#, rate18#, amount#, costBasis#, operatingProfit#, holdingGain#, realProfit#, customerCode, customerName, note` |
-| `gs_customers` | `code, name, phone, email, telegramChatId, birthday, anniversary, notes` |
+| `gs_transactions` | `code, type, day, dateFa, itemCode, title, weight750#, rate18#, amount#, costBasis#, operatingProfit#, holdingGain#, realProfit#, customerCode, customerName, note, payMethod, vat#, invoice, grams#, category, voided` |
+| `gs_customers` | `code, name, phone, email, telegramChatId, birthday, anniversary, notes, kind` |
+| `gs_orders` | `code, dateFa, customerCode, customerName, phone, kind, description, weight#, karat#, estimate#, deposit#, dueDate, status, note` |
+| `gs_settings` | `key, value` |
+| `invoices` | فاکتورهای سایت (سطح ۲) — فقط خوانده می‌شود |
 
 </div>
 
 ستون‌های دارای `#` از نوع **number** و بقیه **string** هستند. ستون‌های `id/createdAt/updatedAt` خودکارند.
 
-## گام ۲ — Import و کردنشیال‌ها
+## گام ۲ — گوگل‌شیت
+یک Spreadsheet با این تب‌ها (ردیف اول = عنوان ستون‌ها، دقیقاً مثل خروجی اکسل):
+`موجودی` · `تراکنش‌ها` · `مشتریان و همکاران` · `سفارش‌ها` · `فاکتورهای سایت`
+در نودهای «Sheet: …» شناسه‌ی همین فایل را بگذار. ستون مشترک برای به‌روزرسانی: `کد`.
+
+## گام ۳ — Import و کردنشیال‌ها
 - فایل ورک‌فلو را Import کن.
-- **Gmail** ← نود «Send Greeting Email»
-- **Telegram** ← نودهای «Notify Owner Occasions» و «Send Daily Report» (و `chatId` مالک)
+- **Google Sheets** ← نودهای «Sheet: …»
+- **Gmail** ← نودهای ایمیل فاکتور و تبریک
+- **Telegram** ← یادآوری مناسبت‌ها و گزارش روزانه
 - منبع قیمت رایگان است و کردنشیال نمی‌خواهد.
+- Settings ← Timezone = `Asia/Tehran`
 
-## گام ۳ — رمز پنل
-نود **Check Key** ← مقدار `ADMIN_KEY` را به رمز دلخواه تغییر بده.
+## گام ۴ — فعال‌سازی و رمز
+1. Save → Publish.
+2. لینک پنل `https://<آدرس-n8n>/webhook/gold-admin` را باز کن و با **رمز اولیه** (در نود Check Key) وارد شو.
+3. تب **⚙️ تنظیمات** ← «تغییر رمز ورود»: رمز دلخواه خودت را بگذار. از این لحظه رمز اولیه کار نمی‌کند.
+4. در همان تب: نام فروشگاه، تلفن، آدرس، ایمیل مالک، Chat ID تلگرام، درصدهای پیش‌فرض اجرت/سود/مالیات/افت.
 
-## گام ۴ — نام فروشگاه
-نود **Find Occasions** ← مقدار `SHOP_NAME` (در ایمیل تبریک نمایش داده می‌شود).
+### رمز را فراموش کردم
+در n8n ← Data Tables ← `gs_settings` ← ردیف‌های `admin_hash` و `admin_salt` را پاک کن. رمز اولیه دوباره فعال می‌شود؛ وارد شو و رمز تازه بگذار.
 
-## گام ۵ — فعال‌سازی
-Save → Publish/Active. لینک پنل: `https://<آدرس-n8n>/webhook/gold-admin`
+## گام ۵ — لینک در سایت
+در سایت فروشگاه (سطح ۱+۲) دکمه‌ی **«🔐 پنل مدیریت فروشگاه»** به همین لینک وصل است.
 
 ## منطق سود واقعی
 
@@ -42,7 +55,25 @@ goldNow         = w750 × rate18(sale day)
 operatingProfit = salePrice − goldNow − makingCost
 holdingGain     = goldNow − w750 × buyRate18
 realProfit      = salePrice − buyCost = operatingProfit + holdingGain
+VAT             = vatPct × max(0, salePrice − goldNow)      (not profit)
+netProfit       = Σ realProfit − Σ expenses
 ```
+
+</div>
+
+## منطق حساب طرف‌ها (مثبت = او به ما بدهکار است)
+
+<div dir="ltr">
+
+| type | money | grams |
+|---|---|---|
+| sell | + (amount + vat) | |
+| return | − (amount + vat) | |
+| buyback | − amount | |
+| buy (cash/credit) | − amount | |
+| buy (gold settlement) | − making | − w750 |
+| receive / deposit | − amount | − grams |
+| pay | + amount | + grams |
 
 </div>
 
@@ -52,10 +83,11 @@ realProfit      = salePrice − buyCost = operatingProfit + holdingGain
 
 | مشکل | راه‌حل |
 |---|---|
-| «رمز اشتباه است» | مقدار `ADMIN_KEY` در نود Check Key |
+| «رمز اشتباه است» | رمز را در تنظیمات عوض کرده‌ای؟ اگر فراموش شده، بخش «رمز را فراموش کردم» |
 | نرخ روز صفر است | دسترسی سرور به `raw.githubusercontent.com`؛ موقتاً نرخ را «دستی» وارد کن |
-| ایمیل تبریک نرفت | کردنشیال Gmail یا ایمیل مشتری |
-| گزارش شبانه نیامد | کردنشیال تلگرام، `chatId`، و Start زدن ربات توسط مالک |
+| ردیف در گوگل‌شیت نیامد | کردنشیال Google Sheets و نام تب‌ها |
+| ایمیل فاکتور/تبریک نرفت | کردنشیال Gmail یا ایمیل مشتری |
+| گزارش شبانه نیامد | کردنشیال تلگرام، Chat ID مالک در تنظیمات، و Start زدن ربات توسط مالک |
 
 </div>
 
