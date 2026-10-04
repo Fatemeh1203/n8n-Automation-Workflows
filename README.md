@@ -27,7 +27,7 @@
 |---|---|---|
 | 🌐 | [https://n8n.aifardainstitute.ir/webhook/gold-shop](https://n8n.aifardainstitute.ir/webhook/gold-shop) | سایت طلافروشی: **قیمت لحظه‌ای** (سطح ۱) + **صدور فاکتور** (سطح ۲) + دکمه‌ی **پنل مدیریت** (سطح ۳) در یک صفحه |
 | 🧾 | [https://n8n.aifardainstitute.ir/form/gold-invoice](https://n8n.aifardainstitute.ir/form/gold-invoice) | فرم صدور فاکتور (سطح ۲) |
-| 🖥️ | [https://n8n.aifardainstitute.ir/webhook/gold-admin](https://n8n.aifardainstitute.ir/webhook/gold-admin) | پنل مدیریت طلافروشی (سطح ۳) — با رمز ورود 🔐 (رمز را مدیر خودش می‌گذارد و عوض می‌کند)؛ خروجی اکسل لحظه‌ای |
+| 🖥️ | [https://n8n.aifardainstitute.ir/webhook/gold-admin](https://n8n.aifardainstitute.ir/webhook/gold-admin) | پنل مدیریت طلافروشی (سطح ۳) — با رمز ورود 🔐 (رمز را مدیر خودش می‌گذارد و عوض می‌کند)؛ آبشده، سکه، فروش اقساطی، اتیکت بارکددار، خروجی اکسل لحظه‌ای |
 | 📗 | گوگل‌شیت زنده (خصوصی) | همه‌ی ثبت‌های سطح ۲ و ۳ با همان ستون‌های خروجی اکسل |
 | 🤖 | ربات تلگرام قیمت (سطح ۱) | پیام `قیمت` به ربات → قیمت طلا، سکه و ارز |
 

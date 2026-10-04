@@ -3,7 +3,7 @@
 > **Goldsmith track · Level 3 (Advanced)** — builds on **[Level 1: Live Price Bot](../level1-live-gold-price-bot)** and **[Level 2: Invoice Assistant](../level2-invoice-and-fee-assistant)**.
 > **مسیر طلافروش · سطح ۳ (پیشرفته)** — ادامه‌ی **[سطح ۱: ربات قیمت لحظه‌ای](../level1-live-gold-price-bot)** و **[سطح ۲: دستیار فاکتور](../level2-invoice-and-fee-assistant)**.
 
-`#n8n` `#gold_shop` `#inventory_management` `#real_profit` `#erp` `#admin_panel` `#google_sheets` `#excel` `#سیستم_مدیریت_طلافروشی` `#مدیریت_موجودی` `#سود_واقعی` `#حساب_همکار` `#طلافروش` `#حسابداری_طلا` `#اتوماسیون` `#iran` `#level3`
+`#n8n` `#gold_shop` `#inventory_management` `#real_profit` `#erp` `#admin_panel` `#google_sheets` `#excel` `#melted_gold` `#gold_coins` `#installments` `#barcode` `#سیستم_مدیریت_طلافروشی` `#مدیریت_موجودی` `#سود_واقعی` `#حساب_همکار` `#آبشده` `#مظنه` `#سکه` `#فروش_اقساطی` `#طلافروش` `#حسابداری_طلا` `#اتوماسیون` `#iran` `#level3`
 
 > 🔗 **Shop website | سایت فروشگاه:** **https://n8n.aifardainstitute.ir/webhook/gold-shop** → button **«🔐 پنل مدیریت فروشگاه»**
 > 🔗 **Admin panel | پنل مدیریت:** **https://n8n.aifardainstitute.ir/webhook/gold-admin** (password-protected · با رمز ورود؛ رمز را خود مدیر در «تنظیمات» عوض می‌کند)
@@ -37,6 +37,10 @@ flowchart LR
 | ![accounts](docs/screenshots/accounts.png) | ![cash](docs/screenshots/cash.png) |
 | 📦 **Inventory by weight & karat / موجودی به تفکیک عیار** | 📈 **Financial report / گزارش مالی** |
 | ![inventory](docs/screenshots/inventory.png) | ![report](docs/screenshots/report.png) |
+| 🧈 **Melted gold (by mazaneh) & melting / آبشده و ذوب** | 🪙 **Coins: stock, avg cost, bubble / سکه** |
+| ![ab](docs/screenshots/ab.png) | ![coin](docs/screenshots/coin.png) |
+| 🏷️ **Barcode labels / اتیکت بارکددار** | |
+| ![labels](docs/screenshots/labels.png) | |
 
 <sub>Screenshots use sample test data. / تصاویر با داده‌ی آزمایشی گرفته شده‌اند.</sub>
 
@@ -50,6 +54,12 @@ flowchart LR
 - **Multi-item invoices** — fee % + profit % or a fixed agreed price, discount, VAT on fee & profit only, **trade-in of old gold**, payment method (cash / POS / card-to-card / cheque / mixed), partial payment → automatic customer credit; printable invoice + email to the customer.
 - **Returns & corrections** — sales returns (refund is reduced by any open customer debt), voiding mistaken entries.
 - **Customer & supplier ledger** — money balance and **gold balance in grams** for every party; receive / pay in cash or in gold.
+- **Melted gold (آبشده)** — buy/sell by **mazaneh** (live or manual) per mesghal of 705 with a per-mesghal commission, lab assay and certificate number; **melt used gold into a bar** with the melt loss recorded in grams and the cost carried over.
+- **Coins** — Emami, Bahar Azadi, half, quarter, gram coins: stock by count, moving-average cost, live price and bubble, real profit per sale, voidable trades.
+- **Installment sales** — split any credit balance into N installments (Jalali due dates); due/overdue list on the dashboard and a 09:00 Telegram reminder; one-click installment receipt.
+- **Stones & per-gram making fee** — stone/gem cost per piece (added to cost and sale price); making fee as % or toman per gram.
+- **Barcode labels & scanner** — printable CODE128 tags (shop, title, weight, karat); a USB scanner types the code into the sale form and the piece drops into the cart.
+- **Live price board** — 18K, 740, 24K, used gold, mazaneh, melted-cash/wholesale, every coin with its bubble, silver 925, ounce, USD, EUR.
 - **Custom orders & repairs** — deposit, due date, status workflow.
 - **Cash box & expenses** — daily/monthly in-out per payment method; rent, wages, bills …
 - **Real profit, including price swings** — each sale is split into:
@@ -77,6 +87,12 @@ n8n (webhooks + schedules) · n8n Data Tables (database) · single-page admin pa
 - **فاکتور فروش چندقلمی** — درصد اجرت و سود یا مبلغ توافقی، تخفیف، مالیات ارزش افزوده (فقط روی اجرت و سود)، **تعویض طلای کهنه**، روش پرداخت (نقد/کارتخوان/کارت‌به‌کارت/چک/ترکیبی)، پرداخت ناقص ← نسیه‌ی خودکار؛ چاپ فاکتور و ایمیل به مشتری.
 - **برگشت از فروش و ابطال** — مبلغ استرداد با بدهی مشتری تهاتر می‌شود؛ ابطال ثبت‌های اشتباه.
 - **حساب مشتری و همکار** — مانده‌ی ریالی و **مانده‌ی طلایی (گرم)**؛ دریافت/پرداخت نقدی یا طلایی.
+- **🧈 آبشده** — خرید و فروش با **مظنه** (روز یا دستی) به‌ازای مثقال ۷۰۵ با کارمزد هر مثقال، عیار آزمایشگاه و شماره‌ی ری‌گیری؛ **ذوب طلای کهنه و تبدیل به آبشده** با ثبت افت (گرم) و انتقال بهای تمام‌شده.
+- **🪙 سکه** — امامی، بهار آزادی، نیم، ربع، گرمی: موجودی تعدادی، میانگین بهای خرید، قیمت روز و حباب، سود واقعی هر فروش، امکان ابطال.
+- **📅 فروش اقساطی** — تقسیط مانده‌ی نسیه به چند قسط با سررسید شمسی؛ فهرست سررسیده/معوق در داشبورد و یادآوری تلگرامی ساعت ۹؛ دریافت قسط با یک کلیک.
+- **💎 سنگ و اجرت گرمی** — قیمت سنگ/نگین هر قطعه (در بها و قیمت فروش)؛ اجرت درصدی یا تومان برای هر گرم.
+- **🏷️ اتیکت بارکددار و بارکدخوان** — چاپ اتیکت با نام مغازه، عنوان، وزن و عیار؛ با بارکدخوان، کالا مستقیم وارد فاکتور می‌شود.
+- **📋 تابلوی نرخ** — ۱۸ عیار، ۷۴۰، ۲۴ عیار، دست‌دوم، مظنه، آبشده نقدی/بنکداری، همه‌ی سکه‌ها با حباب، نقره ۹۲۵، انس، دلار، یورو.
 - **سفارش ساخت و تعمیر** — بیعانه، تاریخ تحویل، وضعیت.
 - **صندوق و هزینه‌ها** — ورودی/خروجی روزانه و ماهانه به تفکیک روش پرداخت؛ اجاره، حقوق، قبوض و …
 - **سود واقعی با احتساب نوسان قیمت**:

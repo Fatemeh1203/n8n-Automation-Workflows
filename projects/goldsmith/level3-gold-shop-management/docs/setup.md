@@ -8,11 +8,12 @@
 
 | Table | Columns |
 |---|---|
-| `gs_inventory` | `code, title, category, weight#, karat#, weight750#, buyRate18#, makingCost#, buyCost#, buyDay, supplier, status, soldTx, note` |
-| `gs_transactions` | `code, type, day, dateFa, itemCode, title, weight750#, rate18#, amount#, costBasis#, operatingProfit#, holdingGain#, realProfit#, customerCode, customerName, note, payMethod, vat#, invoice, grams#, category, voided` |
+| `gs_inventory` | `code, title, category, weight#, karat#, weight750#, buyRate18#, makingCost#, buyCost#, buyDay, supplier, status, soldTx, note, stoneCost#, cert` |
+| `gs_transactions` | `code, type, day, dateFa, itemCode, title, weight750#, rate18#, amount#, costBasis#, operatingProfit#, holdingGain#, realProfit#, customerCode, customerName, note, payMethod, vat#, invoice, grams#, category, voided, qty#` |
 | `gs_customers` | `code, name, phone, email, telegramChatId, birthday, anniversary, notes, kind` |
 | `gs_orders` | `code, dateFa, customerCode, customerName, phone, kind, description, weight#, karat#, estimate#, deposit#, dueDate, status, note` |
 | `gs_settings` | `key, value` |
+| `gs_installments` | `code, invoice, customerCode, customerName, phone, n#, count#, dueDate, amount#, paid#, status, paidDate` |
 | `invoices` | فاکتورهای سایت (سطح ۲) — فقط خوانده می‌شود |
 
 </div>
@@ -21,7 +22,7 @@
 
 ## گام ۲ — گوگل‌شیت
 یک Spreadsheet با این تب‌ها (ردیف اول = عنوان ستون‌ها، دقیقاً مثل خروجی اکسل):
-`موجودی` · `تراکنش‌ها` · `مشتریان و همکاران` · `سفارش‌ها` · `فاکتورهای سایت`
+`موجودی` · `تراکنش‌ها` · `مشتریان و همکاران` · `سفارش‌ها` · `اقساط` · `فاکتورهای سایت`
 در نودهای «Sheet: …» شناسه‌ی همین فایل را بگذار. ستون مشترک برای به‌روزرسانی: `کد`.
 
 ## گام ۳ — Import و کردنشیال‌ها
@@ -57,6 +58,20 @@ holdingGain     = goldNow − w750 × buyRate18
 realProfit      = salePrice − buyCost = operatingProfit + holdingGain
 VAT             = vatPct × max(0, salePrice − goldNow)      (not profit)
 netProfit       = Σ realProfit − Σ expenses
+```
+
+</div>
+
+## آبشده و سکه
+
+<div dir="ltr">
+
+```
+mesghal  = weight × assay / 705 / 4.608          (mazaneh is the price of one mesghal of 705)
+buy      = mesghal × (mazaneh − commission)
+sell     = mesghal × (mazaneh + commission)
+rate18   = mazaneh / 4.3318                       (18K gram rate equivalent)
+coins    : moving-average cost per coin type; realProfit = price×qty − avg×qty
 ```
 
 </div>
