@@ -15,6 +15,20 @@
 |---|---|---|
 | ۱ | [Live Gold/Coin/Dollar Price Bot](projects/goldsmith/level1-live-gold-price-bot) | ربات قیمت لحظه‌ای طلا، سکه و دلار + هشدار قیمت |
 | ۲ | [Invoice & Making-Fee Assistant](projects/goldsmith/level2-invoice-and-fee-assistant) | دستیار صدور فاکتور و محاسبه‌ی اجرت (فرم وب) |
+| ۳ | [Gold Shop Management System](projects/goldsmith/level3-gold-shop-management) | سیستم مدیریت طلافروشی: موجودی، خرید و فروش، مشتریان، سود واقعی و گزارش مالی |
+
+</div>
+
+### 🔗 لینک‌های زنده (دموی آنلاین)
+
+<div dir="ltr">
+
+| | Link | توضیح |
+|---|---|---|
+| 🌐 | [https://n8n.aifardainstitute.ir/webhook/gold-shop](https://n8n.aifardainstitute.ir/webhook/gold-shop) | سایت طلافروشی: **قیمت لحظه‌ای** (سطح ۱) + **صدور فاکتور** (سطح ۲) در یک صفحه |
+| 🧾 | [https://n8n.aifardainstitute.ir/form/gold-invoice](https://n8n.aifardainstitute.ir/form/gold-invoice) | فرم صدور فاکتور (سطح ۲) |
+| 🖥️ | [https://n8n.aifardainstitute.ir/webhook/gold-admin](https://n8n.aifardainstitute.ir/webhook/gold-admin) | پنل مدیریت طلافروشی (سطح ۳) — با رمز ورود 🔐 |
+| 🤖 | ربات تلگرام قیمت (سطح ۱) | پیام `قیمت` به ربات → قیمت طلا، سکه و ارز |
 
 </div>
 

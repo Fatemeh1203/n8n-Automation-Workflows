@@ -6,6 +6,9 @@
 > **مسیر طلافروش · سطح ۲** — ادامه‌ی **[سطح ۱: ربات قیمت لحظه‌ای طلا، سکه و دلار](../level1-live-gold-price-bot)**.
 > بعد از خودکارسازی قیمت‌ها (سطح ۱)، این دستیارِ سطح ۲ **صدور فاکتور** را خودکار می‌کند.
 
+> 🌐 **Live demo | دموی زنده:** [https://n8n.aifardainstitute.ir/webhook/gold-shop](https://n8n.aifardainstitute.ir/webhook/gold-shop) (prices + invoice / قیمت + فاکتور) · 🧾 [https://n8n.aifardainstitute.ir/form/gold-invoice](https://n8n.aifardainstitute.ir/form/gold-invoice) (form / فرم)
+> ➡️ **Next | قدم بعد:** [Level 3: Gold Shop Management System / سیستم مدیریت طلافروشی](../level3-gold-shop-management)
+
 `#n8n` `#invoice` `#gold` `#goldsmith` `#فاکتور_طلا` `#اجرت` `#محاسبه_طلا` `#طلافروش` `#automation` `#اتوماسیون` `#webform` `#فرم_آنلاین` `#google_sheets` `#gmail` `#iran` `#level2`
 
 > 🔒 **The workflow file is private.** This public page shows only the **schematic + docs**. The importable workflow (`workflow.json`) is the product and is kept out of the public repo.

@@ -1,6 +1,8 @@
 # 🥇 Gold, Coin & Dollar Live Price Bot — Level 1 | ربات قیمت لحظه‌ای طلا، سکه و دلار — سطح ۱
 
-> **Goldsmith track · Level 1.** Next step → **[Level 2: Invoice & Making-Fee Assistant](../level2-invoice-and-fee-assistant)**.
+> **Goldsmith track · Level 1.** Next step → **[Level 2: Invoice & Making-Fee Assistant](../level2-invoice-and-fee-assistant)** → **[Level 3: Gold Shop Management](../level3-gold-shop-management)**.
+> 🌐 **Live demo | دموی زنده:** [https://n8n.aifardainstitute.ir/webhook/gold-shop](https://n8n.aifardainstitute.ir/webhook/gold-shop) — live prices on the web, no Telegram needed / قیمت لحظه‌ای روی وب، بدون نیاز به تلگرام
+>
 > **مسیر طلافروش · سطح ۱.** قدم بعد → **[سطح ۲: دستیار محاسبه‌ی فاکتور و اجرت](../level2-invoice-and-fee-assistant)**.
 
 > An n8n Telegram bot that fetches **live gold, coin, and currency prices** from a **free, no-token** Iranian market feed (Iran Market Data / TGJU) and supports **price alerts** — plus a scheduled checker that notifies users when a target price is hit.
