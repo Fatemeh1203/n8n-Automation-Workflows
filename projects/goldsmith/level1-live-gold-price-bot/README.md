@@ -19,6 +19,7 @@
 - **Telegram query bot** — user sends `قیمت` → replies with live gold, coin, and currency prices (in Toman).
 - **Price alerts** — user sends `هشدار سکه 190000000` → an alert is stored.
 - **Scheduled checker (every 10 min)** — fetches prices, checks all stored alerts, notifies the user when the target is reached, then removes the fired alert.
+- **👑 Owner commands (when linked to Level 3)** — only the owner's Chat ID gets answers to `گزارش`, `موجودی`, `صندوق`, `بدهکاران`, `حساب <name>`, `اقساط`, `چک`; everyone else still gets prices.
 
 ### Why a shop pays for it
 A goldsmith answers "what's the price?" dozens of times a day. This bot answers instantly, keeps the shop's Telegram channel active, and brings customers back with price alerts.
@@ -60,6 +61,7 @@ Symbols used: `GOLD_18K_IRR`, `GOLD_24K_IRR`, `COIN_EMAMI_IRR`, `COIN_BAHAR_IRR`
 - **ربات پاسخ‌گو در تلگرام** — کاربر `قیمت` می‌فرستد → قیمت لحظه‌ای طلا، سکه و ارز (به تومان) پاسخ داده می‌شود.
 - **هشدار قیمت** — کاربر `هشدار سکه 190000000` می‌فرستد → یک هشدار ذخیره می‌شود.
 - **بررسی خودکار (هر ۱۰ دقیقه)** — قیمت‌ها گرفته می‌شوند، همه‌ی هشدارها بررسی می‌شوند، هرکدام که به هدف رسید پیام می‌رود و هشدار حذف می‌شود.
+- **👑 دستورهای مدیر (وقتی به سطح ۳ وصل باشد)** — فقط Chat ID مالک جواب می‌گیرد: `گزارش`، `موجودی`، `صندوق`، `بدهکاران`، `حساب <نام>`، `اقساط`، `چک`؛ بقیه‌ی کاربران همان قیمت را می‌بینند.
 
 ### چرا مغازه‌دار پول می‌دهد؟
 طلافروش روزی ده‌ها بار جواب «قیمت چنده؟» را می‌دهد. این ربات فوری جواب می‌دهد، کانال تلگرام مغازه را فعال نگه می‌دارد و با هشدار قیمت مشتری را برمی‌گرداند.

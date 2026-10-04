@@ -3,10 +3,11 @@
 > **Goldsmith track · Level 3 (Advanced)** — builds on **[Level 1: Live Price Bot](../level1-live-gold-price-bot)** and **[Level 2: Invoice Assistant](../level2-invoice-and-fee-assistant)**.
 > **مسیر طلافروش · سطح ۳ (پیشرفته)** — ادامه‌ی **[سطح ۱: ربات قیمت لحظه‌ای](../level1-live-gold-price-bot)** و **[سطح ۲: دستیار فاکتور](../level2-invoice-and-fee-assistant)**.
 
-`#n8n` `#gold_shop` `#inventory_management` `#real_profit` `#erp` `#admin_panel` `#google_sheets` `#excel` `#melted_gold` `#gold_coins` `#installments` `#barcode` `#سیستم_مدیریت_طلافروشی` `#مدیریت_موجودی` `#سود_واقعی` `#حساب_همکار` `#آبشده` `#مظنه` `#سکه` `#فروش_اقساطی` `#طلافروش` `#حسابداری_طلا` `#اتوماسیون` `#iran` `#level3`
+`#n8n` `#gold_shop` `#inventory_management` `#real_profit` `#erp` `#admin_panel` `#google_sheets` `#excel` `#melted_gold` `#gold_coins` `#installments` `#barcode` `#cheques` `#gold_savings` `#customer_portal` `#backup` `#roles` `#moadian` `#silver` `#سیستم_مدیریت_طلافروشی` `#مدیریت_موجودی` `#سود_واقعی` `#حساب_همکار` `#آبشده` `#مظنه` `#سکه` `#فروش_اقساطی` `#چک` `#پس‌انداز_طلایی` `#کارگاه` `#امانی` `#سامانه_مودیان` `#نقره` `#طلافروش` `#حسابداری_طلا` `#اتوماسیون` `#iran` `#level3`
 
 > 🔗 **Shop website | سایت فروشگاه:** **https://n8n.aifardainstitute.ir/webhook/gold-shop** → button **«🔐 پنل مدیریت فروشگاه»**
-> 🔗 **Admin panel | پنل مدیریت:** **https://n8n.aifardainstitute.ir/webhook/gold-admin** (password-protected · با رمز ورود؛ رمز را خود مدیر در «تنظیمات» عوض می‌کند)
+> 🔗 **Admin panel | پنل مدیریت:** **https://n8n.aifardainstitute.ir/webhook/gold-admin** (username + password · نام کاربری و رمز؛ هر کاربر نقش خودش را دارد)
+> 🔗 **Customer portal | پرتال مشتری:** `…/webhook/gold-customer?c=…&t=…` (personal read-only link · لینک اختصاصی فقط‌خواندنی)
 >
 > 🔒 **The workflow file is private.** This page shows the schematic, screenshots and docs only.
 > 🔒 **فایل ورک‌فلو خصوصی است.** این صفحه فقط شماتیک، تصاویر و مستندات را نشان می‌دهد.
@@ -18,16 +19,21 @@
 ```mermaid
 flowchart LR
   W["🌐 Shop website / سایت<br/>(Level 1 + 2)"] -->|"🔐 button"| P["🖥️ Admin panel / پنل مدیریت"]
-  P -->|"password (SHA-256) / رمز"| API["⚙️ Admin API"]
+  P -->|"user + password → token / ورود با نقش"| API["⚙️ Admin API<br/>roles · audit log · lockout"]
   API --> M["🟡 Live gold price / نرخ روز طلا"]
   API --> L["🧮 Business logic / منطق کسب‌وکار<br/>buy · sell · return · ledger · real profit"]
-  L --> DB[("🗄️ Database / پایگاه داده<br/>inventory · transactions · customers · orders · settings")]
+  L --> DB[("🗄️ Database / پایگاه داده<br/>inventory · transactions · customers · orders<br/>cheques · users · audit · closings · settings")]
   L --> GS["📗 Google Sheet (live)<br/>same columns as Excel export"]
   L --> G["📧 Invoice email / ایمیل فاکتور"]
   P --> X["⬇️ Excel export (instant) / خروجی اکسل لحظه‌ای"]
   T1["⏰ Daily 09:00"] --> O["🎉 Occasions / مناسبت‌ها"] --> E["📧 Greeting email / ایمیل تبریک"]
   O --> TG1["📱 Owner reminder / یادآوری به مالک"]
   T2["⏰ Daily 21:00"] --> R["📊 Daily report / گزارش روزانه"] --> TG2["📱 Owner Telegram / تلگرام مالک"]
+  T3["⏰ Nightly 23:45"] --> B["💾 Backup JSON / پشتیبان"] --> TG2
+  B --> E
+  DB --> CP["🔗 Customer portal / پرتال مشتری"]
+  DB --> OB["👑 Owner bot (Level 1) / ربات مدیر"]
+  L -.-> SMS["✉️ SMS (ready, off) / پیامک (آماده، خاموش)"]
 ```
 
 | 📊 Dashboard / داشبورد | 🧾 Multi-item invoice / فاکتور چندقلمی |
@@ -39,8 +45,14 @@ flowchart LR
 | ![inventory](docs/screenshots/inventory.png) | ![report](docs/screenshots/report.png) |
 | 🧈 **Melted gold (by mazaneh) & melting / آبشده و ذوب** | 🪙 **Coins: stock, avg cost, bubble / سکه** |
 | ![ab](docs/screenshots/ab.png) | ![coin](docs/screenshots/coin.png) |
-| 🏷️ **Barcode labels / اتیکت بارکددار** | |
-| ![labels](docs/screenshots/labels.png) | |
+| 🏷️ **Barcode labels / اتیکت بارکددار** | 🧾 **Cheques / چک‌ها** |
+| ![labels](docs/screenshots/labels.png) | ![cheques](docs/screenshots/cheques.png) |
+| 💰 **Gold savings / پس‌انداز طلایی** | 🔨 **Workshop & consignment / کارگاه و امانی** |
+| ![savings](docs/screenshots/savings.png) | ![workshop](docs/screenshots/workshop.png) |
+| 🧮 **Price calculator / ماشین‌حساب** | 📒 **P&L, journal & tax export / دفاتر و مالیات** |
+| ![calc](docs/screenshots/calc.png) | ![books](docs/screenshots/books.png) |
+| 🛡️ **Users, audit log & backup / کاربران و پشتیبان** | |
+| ![security](docs/screenshots/security.png) | |
 
 <sub>Screenshots use sample test data. / تصاویر با داده‌ی آزمایشی گرفته شده‌اند.</sub>
 
@@ -71,11 +83,24 @@ flowchart LR
 - **Live Google Sheet + instant Excel export** — every write is mirrored to a Google Sheet; the Excel button downloads the same tabs and the same Persian column headers (RTL), plus a summary sheet.
 - **Owner-set password** — the owner sets and changes the panel password in *Settings*; only a salted SHA-256 hash is stored.
 
+### New in v4
+- **Users & roles** — owner / accountant / seller (sellers never see costs or profit); signed 12-hour login tokens; 5 wrong passwords → 15-minute lock; full **audit log** of who did what.
+- **Backup** — nightly 23:45 JSON backup to the owner's Telegram (and email); manual download and restore in the panel; secrets are never included.
+- **Cheques** — received / issued cheques with due dates, status (pending · cleared · bounced · endorsed), 7-day due list on the dashboard.
+- **Ounce & mazaneh calculator** — gold price from ounce × dollar, mazaneh ↔ gram, piece price with fee, profit, VAT and stones.
+- **Day close, journal & P&L** — counted cash vs. system, gold difference; double-entry style journal; monthly profit-and-loss statement.
+- **Consignment & workshop** — consignment pieces (paid to the supplier only after sale); gold issued to / received from makers with wage and loss, gold balance per workshop.
+- **Gold savings & customer portal** — customers save grams of gold and redeem later; each customer gets a private read-only link showing balance, savings, installments and recent purchases.
+- **SMS (placeholder)** — Kavenegar-ready messages for invoices, installments and occasions; **off** until an API key is entered in *Settings → SMS*.
+- **Owner Telegram bot** — `گزارش`, `موجودی`, `صندوق`, `بدهکاران`, `حساب <name>`, `اقساط`, `چک` from the Level 1 bot, owner-only.
+- **Tax (Moadian) Excel export** — monthly sales in the gold/jewelry layout with buyer national ID / economic code.
+- **Jewelry certificate**, **silver (925) items**, **charts & slow-moving stock**, **thermal 80 mm printing & label sizes**, **digital scale via Web Serial**, **branches** (per-branch stock and reports).
+
 ### Why a shop pays
 Inventory control and *real* profit are exactly what goldsmiths never know precisely — gold-price swings hide whether the shop earned from selling or just from the market moving. This system separates the two and keeps every customer's and supplier's money **and gold** balance straight.
 
 ### Tech
-n8n (webhooks + schedules) · n8n Data Tables (database) · single-page admin panel served by n8n · Google Sheets · SheetJS (Excel) · free live price feed · Gmail · Telegram.
+n8n (webhooks + schedules) · n8n Data Tables (database) · signed tokens & roles · Web Serial (scale) · single-page admin panel served by n8n · Google Sheets · SheetJS (Excel) · free live price feed · Gmail · Telegram.
 
 ---
 
@@ -103,6 +128,19 @@ n8n (webhooks + schedules) · n8n Data Tables (database) · single-page admin pa
 - **پیام در مناسبت‌ها** — تولد و سالگرد ازدواج (شمسی): ایمیل تبریک ساعت ۹ صبح + یادآوری تلگرامی به مالک.
 - **گوگل‌شیت زنده + خروجی اکسل لحظه‌ای** — هر ثبت هم‌زمان در گوگل‌شیت نوشته می‌شود؛ دکمه‌ی «خروجی اکسل» همان تب‌ها و **همان ستون‌های فارسی** (راست‌به‌چپ) را به‌علاوه‌ی برگه‌ی خلاصه‌ی گزارش دانلود می‌کند.
 - **رمز به انتخاب مدیر** — مدیر رمز پنل را در «تنظیمات» می‌گذارد و هر وقت بخواهد عوض می‌کند؛ فقط هش رمز (SHA-256 با نمک) ذخیره می‌شود.
+
+### تازه‌های نسخه‌ی ۴
+- **🛡️ کاربران و نقش‌ها** — مدیر / حسابدار / فروشنده (فروشنده بها و سود را نمی‌بیند)؛ ورود با توکن ۱۲ ساعته؛ ۵ بار رمز اشتباه = ۱۵ دقیقه قفل؛ **گزارش فعالیت** همه‌ی کاربران.
+- **💾 پشتیبان‌گیری** — هر شب ۲۳:۴۵ نسخه‌ی کامل به تلگرام (و ایمیل) مالک؛ دانلود و بازیابی دستی در پنل؛ رمزها هرگز در پشتیبان نیستند.
+- **🧾 چک‌ها** — چک دریافتی و پرداختی با سررسید و وضعیت (در انتظار · وصول · برگشتی · خرج شده)؛ چک‌های ۷ روز آینده در داشبورد.
+- **🧮 ماشین‌حساب انس و مظنه** — نرخ طلا از انس × دلار، تبدیل مظنه به گرم، قیمت قطعه با اجرت، سود، مالیات و سنگ.
+- **📒 بستن صندوق، دفتر روزنامه و سود و زیان** — شمارش صندوق و مقایسه با سیستم، مغایرت طلا؛ دفتر روزنامه؛ صورت سود و زیان ماهانه.
+- **🔨 امانی و کارگاه** — کالای امانی (پول بنکدار بعد از فروش)؛ تحویل طلا به سازنده و دریافت کالا با اجرت و افت؛ مانده‌ی طلایی هر کارگاه.
+- **💰 پس‌انداز طلایی و پرتال مشتری** — مشتری گرم‌گرم طلا پس‌انداز می‌کند و بعداً خرید می‌کند؛ هر مشتری یک لینک اختصاصی فقط‌خواندنی دارد (مانده، پس‌انداز، اقساط، خریدها).
+- **✉️ پیامک (جای خالی)** — پیام فاکتور، قسط و مناسبت آماده است (کاوه‌نگار)؛ تا وقتی کلید API در «تنظیمات ← پیامک» وارد نشود **خاموش** است.
+- **👑 ربات مدیر در تلگرام** — `گزارش`، `موجودی`، `صندوق`، `بدهکاران`، `حساب <نام>`، `اقساط`، `چک` از همان ربات سطح ۱، فقط برای مالک.
+- **🧾 خروجی مالیاتی (سامانه‌ی مودیان)** — اکسل فروش ماهانه با الگوی طلا و جواهر و کد ملی/اقتصادی خریدار.
+- **گواهی جواهر**، **نقره (۹۲۵)**، **نمودار و کالای کم‌گردش**، **چاپ حرارتی ۸۰ میلی‌متری و اندازه‌ی اتیکت**، **خواندن ترازوی دیجیتال (Web Serial)**، **چند شعبه** (موجودی و گزارش هر شعبه).
 
 ### «مشتری قبلی / مشتری جدید / مشتری گذری» یعنی چه؟
 - **مشتری قبلی**: از فهرست انتخاب کنید؛ فروش به حساب او ثبت می‌شود (نسیه، سابقه، مناسبت‌ها).
