@@ -11,7 +11,7 @@
 فایل `workflow.json` را Import کن.
 
 ## گام ۳ — کردنشیال‌ها
-- **Get Live Gold Rate** (نرخ آنلاین): کردنشیال Query Auth با نام پارامتر `x-api-key` و توکن nerkh. اختیاری — اگر وصل نشود، حالت «دستی» کار می‌کند.
+- **Get Live Gold Rate** (نرخ آنلاین): کردنشیال **لازم ندارد** — منبع رایگان [Iran Market Data](https://github.com/iran-market/iran-market.github.io) (نماد `GOLD_18K_IRR`، تومان، هر ۳۰ دقیقه).
 - **Append to Sheet**: کردنشیال Google Sheets را وصل کن. سند از قبل ساخته شده:
   `https://docs.google.com/spreadsheets/d/19fTJM9-sIyVrv1MivnnpWRv_yNEIXd75dKmJEgvhtwg/edit`
   (اگر با اکانت گوگل دیگری وصل می‌شوی، سند خودت را در نود انتخاب کن؛ ردیف سرستون همان لیست ستون‌ها باشد.)
@@ -45,7 +45,7 @@ total     = goldValue + makingFee + profit
 | مشکل | راه‌حل |
 |---|---|
 | فاکتور نمایش داده نمی‌شود | Activate نشده یا Test URL به‌جای Production URL |
-| نرخ آنلاین صفر شد | کردنشیال nerkh وصل نیست یا حالت «دستی» را انتخاب کن و rate18 را پر کن |
+| نرخ آنلاین صفر شد | سرور به `raw.githubusercontent.com` دسترسی ندارد؛ حالت «دستی» را انتخاب کن و rate18 را پر کن |
 | ردیف در شیت اضافه نشد | کردنشیال Google Sheets وصل نیست یا سند/شیت درست انتخاب نشده |
 | ایمیل نرفت | کردنشیال Gmail وصل نیست یا ایمیل مشتری خالی است (به ownerEmail می‌رود) |
 | گزارش روزانه نیامد | `chatId` تنظیم نشده |

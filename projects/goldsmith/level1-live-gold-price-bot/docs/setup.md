@@ -46,20 +46,15 @@ docker run -it --rm \
 
 ---
 
-## گام ۳ — گرفتن توکن API قیمت (nerkh.io)
+## گام ۳ — منبع قیمت (رایگان، بدون توکن)
 
-1. در [nerkh.io](https://nerkh.io) ثبت‌نام کنید و یک **توکن API** بگیرید (رایگان).
-2. در n8n یک کردنشیال جدید از نوع **Query Auth** بسازید:
-   - **Name** (نام پارامتر): `x-api-key`
-   - **Value**: توکن شما
-3. نام کردنشیال را **`Nerkh API Key`** بگذارید.
-4. Save.
+کاری لازم نیست انجام دهید ✅ ورک‌فلو قیمت‌ها را از [Iran Market Data](https://github.com/iran-market/iran-market.github.io) می‌گیرد:
 
-> اندپوینت‌های پیش‌فرض ورک‌فلو (قیمت‌ها به **تومان**):
-> - طلا و سکه: `https://api.nerkh.io/v1/prices/json/gold`
-> - ارز: `https://api.nerkh.io/v1/prices/json/currency`
->
-> نکته: nerkh هدر `Authorization: Bearer <token>` را هم می‌پذیرد؛ اگر ترجیح می‌دهید، به‌جای Query Auth از کردنشیال **Bearer Auth** استفاده کنید.
+- **رایگان**، بدون ثبت‌نام و بدون توکن/کردنشیال (لایسنس MIT، داده از TGJU)
+- قیمت‌ها به **تومان**، به‌روزرسانی **هر ۳۰ دقیقه**
+- اندپوینت: `https://raw.githubusercontent.com/iran-market/iran-market.github.io/main/data/latest-toman.json`
+
+> نمادهای استفاده‌شده: `GOLD_18K_IRR`, `GOLD_24K_IRR`, `COIN_EMAMI_IRR`, `COIN_BAHAR_IRR`, `COIN_HALF_IRR`, `COIN_QUARTER_IRR`, `USD_IRR_FREE`, `EUR_IRR_FREE`, `GBP_IRR_FREE`
 
 ---
 
@@ -90,7 +85,6 @@ docker run -it --rm \
 2. در n8n: **Workflows → Import from File / Import from URL** و فایل را وارد کنید.
 3. روی هر نودی که علامت هشدار کردنشیال دارد کلیک کنید و کردنشیال درست را انتخاب کنید:
    - نودهای `Telegram Trigger`, `Send Prices to User`, `Confirm Alert`, `Send Help`, `Send Price Alert` → کردنشیال **Telegram Bot**
-   - نودهای `Get Gold Prices`, `Get Currency Prices`, `Get Gold Prices (Alerts)`, `Get Currency Prices (Alerts)` → کردنشیال **Nerkh API Key**
 4. در نودهای `Save Alert`, `Get Active Alerts`, `Remove Fired Alert` مطمئن شوید Data Table روی **`price_alerts`** تنظیم است.
 
 ---
@@ -110,9 +104,9 @@ docker run -it --rm \
 | مشکل | علت محتمل / راه‌حل |
 |---|---|
 | ربات جواب نمی‌دهد | ورک‌فلو Activate نشده، یا توکن تلگرام اشتباه است |
-| قیمت‌ها «—» نشان داده می‌شوند | نماد دارایی با API نمی‌خواند؛ خروجی نود `Get Gold Prices` را ببینید و نمادها (`GOLD18K`, `SEKE_EMAMI`, …) را در نودهای کد تنظیم کنید |
+| قیمت‌ها «—» نشان داده می‌شوند | نماد در منبع تغییر کرده؛ خروجی نود `Get Market Prices` را ببینید و جدول `MAP` را در نودهای کد اصلاح کنید |
 | هشدار ثبت می‌شود ولی خبر نمی‌آید | نام/ستون‌های Data Table اشتباه است، یا Trigger زمان‌بندی غیرفعال است |
-| خطای احراز هویت API | نام پارامتر کردنشیال باید `x-api-key` باشد و مقدارش توکن معتبر nerkh |
+| خطای اتصال در `Get Market Prices` | سرور به `raw.githubusercontent.com` دسترسی ندارد؛ آدرس جایگزین (CDN): `https://cdn.jsdelivr.net/gh/iran-market/iran-market.github.io@main/data/latest-toman.json` |
 
 </div>
 

@@ -37,7 +37,7 @@ flowchart TD
 
 ### What it does
 - **Web form** (public URL) — enter item, weight, karat, making-fee %, profit %, customer email/phone.
-- **Gold rate** — fetched **online** (nerkh.io) or entered manually, chosen from a form dropdown.
+- **Gold rate** — fetched **online** (free feed, no API key) or entered manually, chosen from a form dropdown.
 - **Compute** — `goldValue = weight × rate × (karat/750)`, then making-fee, profit, total.
 - **Professional invoice** — styled, printable, with an editable shop/logo header.
 - **Archive** — every invoice → n8n Data Table **and** a Google Sheet.
@@ -48,7 +48,7 @@ flowchart TD
 Manual calculation errors in gold mean direct money loss. This removes them and issues a consistent invoice every time — and its public form doubles as a **live demo** buyers can test before buying.
 
 ### Tech
-n8n · Form Trigger · nerkh.io price API · Data Table · Google Sheets · Gmail · Telegram.
+n8n · Form Trigger · free price feed (Iran Market Data) · Data Table · Google Sheets · Gmail · Telegram.
 
 ---
 
@@ -56,7 +56,7 @@ n8n · Form Trigger · nerkh.io price API · Data Table · Google Sheets · Gmai
 
 ### چه‌کار می‌کند؟
 - **فرم وب** (لینک عمومی) — شرح کالا، وزن، عیار، درصد اجرت و سود، ایمیل/شماره‌ی مشتری.
-- **نرخ طلا** — از فرم انتخاب می‌شود: **آنلاین** (nerkh.io) یا دستی.
+- **نرخ طلا** — از فرم انتخاب می‌شود: **آنلاین** (منبع رایگان، بدون توکن) یا دستی.
 - **محاسبه** — `ارزش طلا = وزن × نرخ × (عیار÷۷۵۰)` + اجرت + سود = مبلغ نهایی.
 - **فاکتور حرفه‌ای** — زیبا، قابل‌چاپ، با هدر لوگو/نام فروشگاهِ قابل‌ویرایش.
 - **آرشیو** — هر فاکتور → Data Table **و** Google Sheet.

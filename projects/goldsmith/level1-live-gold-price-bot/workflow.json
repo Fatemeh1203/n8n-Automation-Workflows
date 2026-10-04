@@ -114,61 +114,30 @@
     },
     {
       "parameters": {
-        "method": "GET",
-        "url": "https://api.nerkh.io/v1/prices/json/gold",
-        "authentication": "genericCredentialType",
-        "genericAuthType": "httpQueryAuth",
-        "sendQuery": false,
+        "url": "https://raw.githubusercontent.com/iran-market/iran-market.github.io/main/data/latest-toman.json",
         "options": {
-          "timeout": 15000
+          "timeout": 20000,
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
         }
       },
-      "id": "http_gold",
-      "name": "Get Gold Prices",
+      "id": "eb567eac-b350-4f19-aa67-469e624dddc6",
+      "name": "Get Market Prices",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        450,
+        560,
         0
-      ],
-      "credentials": {
-        "httpQueryAuth": {
-          "id": "REPLACE_WITH_NERKH_CRED",
-          "name": "Nerkh API Key"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "method": "GET",
-        "url": "https://api.nerkh.io/v1/prices/json/currency",
-        "authentication": "genericCredentialType",
-        "genericAuthType": "httpQueryAuth",
-        "sendQuery": false,
-        "options": {
-          "timeout": 15000
-        }
-      },
-      "id": "http_currency",
-      "name": "Get Currency Prices",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.4,
-      "position": [
-        670,
-        0
-      ],
-      "credentials": {
-        "httpQueryAuth": {
-          "id": "REPLACE_WITH_NERKH_CRED",
-          "name": "Nerkh API Key"
-        }
-      }
+      ]
     },
     {
       "parameters": {
         "mode": "runOnceForAllItems",
         "language": "javaScript",
-        "jsCode": "const gold = $('Get Gold Prices').first().json?.data?.prices || {};\nconst cur = $('Get Currency Prices').first().json?.data?.prices || {};\nconst priceOf = (obj, sym) => { const v = obj?.[sym]?.current; if (v === undefined || v === null) return null; const n = Number(String(v).replace(/[^\\d.]/g, '')); return Number.isFinite(n) ? n : null; };\nconst fmt = (n) => (n === null ? '—' : n.toLocaleString('fa-IR'));\nconst rows = [['🟡 طلای ۱۸ عیار (گرم)', priceOf(gold,'GOLD18K')],['🟡 طلای ۲۴ عیار (گرم)', priceOf(gold,'GOLD24K')],['🪙 سکه امامی', priceOf(gold,'SEKE_EMAMI')],['🪙 سکه بهار آزادی', priceOf(gold,'SEKE_BAHAR')],['🪙 نیم سکه', priceOf(gold,'SEKE_NIM')],['🪙 ربع سکه', priceOf(gold,'SEKE_ROB')],['💵 دلار آمریکا', priceOf(cur,'USD')],['💶 یورو', priceOf(cur,'EUR')],['💷 پوند', priceOf(cur,'GBP')]];\nconst now = new Date().toLocaleString('fa-IR', { timeZone: 'Asia/Tehran' });\nlet message = '📊 قیمت لحظه‌ای بازار (تومان)\\n\\n';\nfor (const [label, price] of rows) { message += label + ': ' + fmt(price) + '\\n'; }\nmessage += '\\n🕒 به‌روزرسانی: ' + now;\nmessage += '\\n\\nℹ️ برای ثبت هشدار بنویسید: هشدار دلار 200000';\nconst chatId = $('Telegram Trigger').first().json.message.chat.id;\nreturn [{ json: { message, chatId: String(chatId) } }];"
+        "jsCode": "const raw = $('Get Market Prices').first().json || {};\nconst cats = (raw.data && raw.data.categories) || {};\nconst bySym = {};\nfor (const list of Object.values(cats)) { for (const it of (list || [])) { if (it && it.symbol) bySym[it.symbol] = Number(it.price); } }\nconst MAP = { GOLD18K: 'GOLD_18K_IRR', GOLD24K: 'GOLD_24K_IRR', SEKE_EMAMI: 'COIN_EMAMI_IRR', SEKE_BAHAR: 'COIN_BAHAR_IRR', SEKE_NIM: 'COIN_HALF_IRR', SEKE_ROB: 'COIN_QUARTER_IRR', USD: 'USD_IRR_FREE', EUR: 'EUR_IRR_FREE', GBP: 'GBP_IRR_FREE' };\nconst priceOf = (sym) => { const n = bySym[MAP[sym]]; return Number.isFinite(n) && n > 0 ? n : null; };\nconst fmt = (n) => (n === null ? '—' : n.toLocaleString('fa-IR'));\nconst rows = [['🟡 طلای ۱۸ عیار (گرم)', priceOf('GOLD18K')],['🟡 طلای ۲۴ عیار (گرم)', priceOf('GOLD24K')],['🪙 سکه امامی', priceOf('SEKE_EMAMI')],['🪙 سکه بهار آزادی', priceOf('SEKE_BAHAR')],['🪙 نیم سکه', priceOf('SEKE_NIM')],['🪙 ربع سکه', priceOf('SEKE_ROB')],['💵 دلار آمریکا', priceOf('USD')],['💶 یورو', priceOf('EUR')],['💷 پوند', priceOf('GBP')]];\nconst ts = raw.data && raw.data.generated_at ? new Date(raw.data.generated_at) : new Date();\nconst updated = ts.toLocaleString('fa-IR', { timeZone: 'Asia/Tehran' });\nlet message = '📊 قیمت بازار (تومان)\\n\\n';\nfor (const [label, price] of rows) { message += label + ': ' + fmt(price) + '\\n'; }\nmessage += '\\n🕒 به‌روزرسانی: ' + updated;\nmessage += '\\n\\nℹ️ برای ثبت هشدار بنویسید: هشدار دلار 200000';\nconst chatId = $('Telegram Trigger').first().json.message.chat.id;\nreturn [{ json: { message, chatId: String(chatId) } }];"
       },
       "id": "code_price",
       "name": "Build Price Message",
@@ -369,55 +338,24 @@
     },
     {
       "parameters": {
-        "method": "GET",
-        "url": "https://api.nerkh.io/v1/prices/json/gold",
-        "authentication": "genericCredentialType",
-        "genericAuthType": "httpQueryAuth",
-        "sendQuery": false,
+        "url": "https://raw.githubusercontent.com/iran-market/iran-market.github.io/main/data/latest-toman.json",
         "options": {
-          "timeout": 15000
+          "timeout": 20000,
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
         }
       },
-      "id": "http_gold_alerts",
-      "name": "Get Gold Prices (Alerts)",
+      "id": "a361f77f-f83e-44ae-a0b8-f34a6ef738f9",
+      "name": "Get Market Prices (Alerts)",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.4,
       "position": [
-        220,
+        335,
         620
-      ],
-      "credentials": {
-        "httpQueryAuth": {
-          "id": "REPLACE_WITH_NERKH_CRED",
-          "name": "Nerkh API Key"
-        }
-      }
-    },
-    {
-      "parameters": {
-        "method": "GET",
-        "url": "https://api.nerkh.io/v1/prices/json/currency",
-        "authentication": "genericCredentialType",
-        "genericAuthType": "httpQueryAuth",
-        "sendQuery": false,
-        "options": {
-          "timeout": 15000
-        }
-      },
-      "id": "http_currency_alerts",
-      "name": "Get Currency Prices (Alerts)",
-      "type": "n8n-nodes-base.httpRequest",
-      "typeVersion": 4.4,
-      "position": [
-        450,
-        620
-      ],
-      "credentials": {
-        "httpQueryAuth": {
-          "id": "REPLACE_WITH_NERKH_CRED",
-          "name": "Nerkh API Key"
-        }
-      }
+      ]
     },
     {
       "parameters": {
@@ -446,7 +384,7 @@
       "parameters": {
         "mode": "runOnceForAllItems",
         "language": "javaScript",
-        "jsCode": "const gold = $('Get Gold Prices (Alerts)').first().json?.data?.prices || {};\nconst cur = $('Get Currency Prices (Alerts)').first().json?.data?.prices || {};\nconst all = Object.assign({}, gold, cur);\nconst priceOf = (sym) => { const v = all?.[sym]?.current; if (v === undefined || v === null) return null; const n = Number(String(v).replace(/[^\\d.]/g, '')); return Number.isFinite(n) ? n : null; };\nconst out = [];\nfor (const item of $input.all()) { const a = item.json; const current = priceOf(a.asset); if (current === null) continue; const target = Number(a.target); const hit = a.direction === 'below' ? current <= target : current >= target; if (!hit) continue; out.push({ json: { alertId: a.id, chatId: String(a.chatId), assetLabel: a.assetLabel, target, current, direction: a.direction } }); }\nreturn out;"
+        "jsCode": "const raw = $('Get Market Prices (Alerts)').first().json || {};\nconst cats = (raw.data && raw.data.categories) || {};\nconst bySym = {};\nfor (const list of Object.values(cats)) { for (const it of (list || [])) { if (it && it.symbol) bySym[it.symbol] = Number(it.price); } }\nconst MAP = { GOLD18K: 'GOLD_18K_IRR', GOLD24K: 'GOLD_24K_IRR', SEKE_EMAMI: 'COIN_EMAMI_IRR', SEKE_BAHAR: 'COIN_BAHAR_IRR', SEKE_NIM: 'COIN_HALF_IRR', SEKE_ROB: 'COIN_QUARTER_IRR', USD: 'USD_IRR_FREE', EUR: 'EUR_IRR_FREE', GBP: 'GBP_IRR_FREE' };\nconst priceOf = (sym) => { const n = bySym[MAP[sym]]; return Number.isFinite(n) && n > 0 ? n : null; };\nconst out = [];\nfor (const item of $input.all()) { const a = item.json; const current = priceOf(a.asset); if (current === null) continue; const target = Number(a.target); const hit = a.direction === 'below' ? current <= target : current >= target; if (!hit) continue; out.push({ json: { alertId: a.id, chatId: String(a.chatId), assetLabel: a.assetLabel, target, current, direction: a.direction } }); }\nreturn out;"
       },
       "id": "code_check",
       "name": "Check Triggered Alerts",
@@ -514,7 +452,7 @@
     },
     {
       "parameters": {
-        "content": "## 🤖 بخش پاسخ‌گویی (تلگرام)\nکاربر پیام می‌دهد → دستور تشخیص داده می‌شود → قیمت لحظه‌ای (طلا + ارز) یا ثبت هشدار.\n\n**دستورها:** «قیمت» ، «هشدار دلار 200000»",
+        "content": "## 🤖 بخش پاسخ‌گویی (تلگرام)\nکاربر پیام می‌دهد → دستور تشخیص داده می‌شود → قیمت بازار (طلا + سکه + ارز) یا ثبت هشدار.\n\n**دستورها:** «قیمت» ، «هشدار دلار 200000»",
         "height": 140,
         "width": 1000,
         "color": 4
@@ -530,7 +468,7 @@
     },
     {
       "parameters": {
-        "content": "## ⏰ بخش هشدار خودکار (هر ۱۰ دقیقه)\nقیمت طلا و ارز گرفته می‌شود → هشدارهای فعال بررسی می‌شوند → هرکدام که به هدف رسید، پیام می‌رود و حذف می‌شود.",
+        "content": "## ⏰ بخش هشدار خودکار (هر ۱۰ دقیقه)\nقیمت طلا، سکه و ارز گرفته می‌شود → هشدارهای فعال بررسی می‌شوند → هرکدام که به هدف رسید، پیام می‌رود و حذف می‌شود.",
         "height": 130,
         "width": 1200,
         "color": 5
@@ -546,7 +484,7 @@
     },
     {
       "parameters": {
-        "content": "## ⚙️ پیش‌نیازها\n1. Data Table به نام `price_alerts` با ستون‌های: chatId, asset, assetLabel, target, direction\n2. کردنشیال ربات تلگرام\n3. کردنشیال Query Auth برای nerkh.io با نام پارامتر `x-api-key` و مقدار توکن شما (روی هر ۴ نود HTTP)",
+        "content": "## ⚙️ پیش‌نیازها\n1. Data Table به نام `price_alerts` با ستون‌های: chatId, asset, assetLabel, target, direction\n2. کردنشیال ربات تلگرام\n3. منبع قیمت رایگان و بدون توکن است (iran-market / TGJU، هر ۳۰ دقیقه) — کردنشیالی لازم نیست",
         "height": 300,
         "width": 430,
         "color": 6
@@ -577,7 +515,7 @@
       "main": [
         [
           {
-            "node": "Get Gold Prices",
+            "node": "Get Market Prices",
             "type": "main",
             "index": 0
           }
@@ -592,28 +530,6 @@
         [
           {
             "node": "Send Help",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Get Gold Prices": {
-      "main": [
-        [
-          {
-            "node": "Get Currency Prices",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Get Currency Prices": {
-      "main": [
-        [
-          {
-            "node": "Build Price Message",
             "type": "main",
             "index": 0
           }
@@ -657,29 +573,7 @@
       "main": [
         [
           {
-            "node": "Get Gold Prices (Alerts)",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Get Gold Prices (Alerts)": {
-      "main": [
-        [
-          {
-            "node": "Get Currency Prices (Alerts)",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Get Currency Prices (Alerts)": {
-      "main": [
-        [
-          {
-            "node": "Get Active Alerts",
+            "node": "Get Market Prices (Alerts)",
             "type": "main",
             "index": 0
           }
@@ -713,6 +607,28 @@
         [
           {
             "node": "Remove Fired Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Market Prices": {
+      "main": [
+        [
+          {
+            "node": "Build Price Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Market Prices (Alerts)": {
+      "main": [
+        [
+          {
+            "node": "Get Active Alerts",
             "type": "main",
             "index": 0
           }
