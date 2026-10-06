@@ -3,7 +3,7 @@
 > **Goldsmith track · Level 3 (Advanced)** — builds on **[Level 1: Live Price Bot](../level1-live-gold-price-bot)** and **[Level 2: Invoice Assistant](../level2-invoice-and-fee-assistant)**.
 > **مسیر طلافروش · سطح ۳ (پیشرفته)** — ادامه‌ی **[سطح ۱: ربات قیمت لحظه‌ای](../level1-live-gold-price-bot)** و **[سطح ۲: دستیار فاکتور](../level2-invoice-and-fee-assistant)**.
 
-`#n8n` `#gold_shop` `#inventory_management` `#real_profit` `#erp` `#admin_panel` `#google_sheets` `#excel` `#melted_gold` `#gold_coins` `#installments` `#barcode` `#cheques` `#gold_savings` `#customer_portal` `#backup` `#roles` `#moadian` `#silver` `#سیستم_مدیریت_طلافروشی` `#مدیریت_موجودی` `#سود_واقعی` `#حساب_همکار` `#آبشده` `#مظنه` `#سکه` `#فروش_اقساطی` `#چک` `#پس‌انداز_طلایی` `#کارگاه` `#امانی` `#سامانه_مودیان` `#نقره` `#طلافروش` `#حسابداری_طلا` `#اتوماسیون` `#iran` `#level3`
+`#n8n` `#gold_shop` `#inventory_management` `#real_profit` `#erp` `#admin_panel` `#google_sheets` `#excel` `#melted_gold` `#gold_coins` `#installments` `#barcode` `#cheques` `#gold_savings` `#customer_portal` `#backup` `#roles` `#moadian` `#silver` `#سیستم_مدیریت_طلافروشی` `#مدیریت_موجودی` `#سود_واقعی` `#حساب_همکار` `#آبشده` `#مظنه` `#سکه` `#فروش_اقساطی` `#چک` `#پس‌انداز_طلایی` `#کارگاه` `#امانی` `#سامانه_مودیان` `#نقره` `#طلافروش` `#حسابداری_طلا` `#اتوماسیون` `#iran` `#multi_tenant` `#چند_مغازه` `#level3`
 
 > 🔗 **Shop website | سایت فروشگاه:** **https://n8n.aifardainstitute.ir/webhook/gold-shop** → button **«🔐 پنل مدیریت فروشگاه»**
 > 🔗 **Admin panel | پنل مدیریت:** **https://n8n.aifardainstitute.ir/webhook/gold-admin** (username + password · نام کاربری و رمز؛ هر کاربر نقش خودش را دارد)
@@ -96,6 +96,14 @@ flowchart LR
 - **Tax (Moadian) Excel export** — monthly sales in the gold/jewelry layout with buyer national ID / economic code.
 - **Jewelry certificate**, **silver (925) items**, **charts & slow-moving stock**, **thermal 80 mm printing & label sizes**, **digital scale via Web Serial**, **branches** (per-branch stock and reports).
 
+### New in v5
+- **Cleaner panel (UI/UX)** — the 17 tabs are now a grouped **side menu** (Sales · Stock · Money & accounts · Reports · System), a slim sticky top bar with icon buttons, quick-action buttons on the dashboard, a short price board ("show all rates" on demand), and on phones a slide-in menu plus a bottom tab bar.
+- **Website invoice → real sale** — invoices issued on the public website appear in *Sales → Website invoices*; **Convert to sale** pre-fills the customer and amount and suggests stock items of the same weight/karat; or **Set aside** (with undo). Each website invoice can be converted only once.
+- **Multi-shop ready** — one shared *core* workflow holds the business logic; every shop has its own panel, website, Telegram bot and its own data tables, so shops never see each other's data. UI updates reach every shop at once.
+- **Per-shop Telegram bot** — the shop owner pastes a @BotFather token in *Settings*; the bot is connected automatically with a secret webhook header (the token is never sent back to the browser or stored in backups).
+
+![v5 dashboard](docs/screenshots/v5-dashboard.png)
+
 ### Why a shop pays
 Inventory control and *real* profit are exactly what goldsmiths never know precisely — gold-price swings hide whether the shop earned from selling or just from the market moving. This system separates the two and keeps every customer's and supplier's money **and gold** balance straight.
 
@@ -141,6 +149,22 @@ n8n (webhooks + schedules) · n8n Data Tables (database) · signed tokens & role
 - **👑 ربات مدیر در تلگرام** — `گزارش`، `موجودی`، `صندوق`، `بدهکاران`، `حساب <نام>`، `اقساط`، `چک` از همان ربات سطح ۱، فقط برای مالک.
 - **🧾 خروجی مالیاتی (سامانه‌ی مودیان)** — اکسل فروش ماهانه با الگوی طلا و جواهر و کد ملی/اقتصادی خریدار.
 - **گواهی جواهر**، **نقره (۹۲۵)**، **نمودار و کالای کم‌گردش**، **چاپ حرارتی ۸۰ میلی‌متری و اندازه‌ی اتیکت**، **خواندن ترازوی دیجیتال (Web Serial)**، **چند شعبه** (موجودی و گزارش هر شعبه).
+
+### تازه‌های نسخه‌ی ۵
+- **🎨 پنل خلوت و مرتب (UI/UX)** — ۱۷ تب حالا در یک **منوی کناری گروه‌بندی‌شده** است (خرید و فروش · کالا · پول و حساب‌ها · گزارش · سیستم)؛ نوار بالای ساده با دکمه‌های آیکونی؛ دکمه‌های سریع روی داشبورد؛ تابلوی نرخ کوتاه (با «همه‌ی نرخ‌ها»)؛ روی گوشی منوی کشویی و نوار دکمه‌های پایین صفحه.
+- **🌐 فاکتور سایت ← فروش واقعی** — فاکتورهای صادرشده در سایت در «فروش ← فاکتورهای سایت» می‌آیند؛ با **«تبدیل به فروش»** مشتری و مبلغ خودکار پر می‌شود و کالای هم‌وزن از موجودی پیشنهاد می‌شود؛ یا **«کنار گذاشتن»** (با امکان برگرداندن). هر فاکتور سایت فقط یک بار تبدیل می‌شود.
+- **🏪 آماده برای چند مغازه** — منطق کسب‌وکار در یک «هسته‌ی مشترک» است؛ هر مغازه پنل، سایت، ربات تلگرام و جدول‌های اطلاعات **جداگانه** دارد و اطلاعات مغازه‌ها هرگز قاطی نمی‌شود. هر بهبود ظاهر پنل هم‌زمان به همه‌ی مغازه‌ها می‌رسد.
+- **🤖 ربات تلگرام هر مغازه** — مغازه‌دار توکن ربات را از @BotFather در «تنظیمات» می‌چسباند و ربات خودکار وصل می‌شود (با کلید مخفی؛ توکن به مرورگر برنمی‌گردد و در پشتیبان نیست).
+
+<div dir="ltr">
+
+| | |
+|---|---|
+| ![mobile](docs/screenshots/v5-mobile.png) | ![menu](docs/screenshots/v5-mobile-menu.png) |
+
+</div>
+
+![site invoices](docs/screenshots/site-invoices.png)
 
 ### «مشتری قبلی / مشتری جدید / مشتری گذری» یعنی چه؟
 - **مشتری قبلی**: از فهرست انتخاب کنید؛ فروش به حساب او ثبت می‌شود (نسیه، سابقه، مناسبت‌ها).
