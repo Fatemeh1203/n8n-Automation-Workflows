@@ -1,0 +1,648 @@
+{
+  "name": "ربات قیمت لحظه‌ای طلا، سکه و دلار",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "id": "tg_trigger",
+      "name": "Telegram Trigger",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.5,
+      "position": [
+        0,
+        200
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "REPLACE_WITH_TELEGRAM_CRED",
+          "name": "Telegram Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "rules",
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "loose"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.message.text }}",
+                    "rightValue": "قیمت",
+                    "operator": {
+                      "type": "string",
+                      "operation": "contains"
+                    }
+                  },
+                  {
+                    "leftValue": "={{ $json.message.text }}",
+                    "rightValue": "price",
+                    "operator": {
+                      "type": "string",
+                      "operation": "contains"
+                    }
+                  },
+                  {
+                    "leftValue": "={{ $json.message.text }}",
+                    "rightValue": "نرخ",
+                    "operator": {
+                      "type": "string",
+                      "operation": "contains"
+                    }
+                  }
+                ],
+                "combinator": "or"
+              },
+              "renameOutput": true,
+              "outputKey": "قیمت"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": false,
+                  "leftValue": "",
+                  "typeValidation": "loose"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.message.text }}",
+                    "rightValue": "هشدار",
+                    "operator": {
+                      "type": "string",
+                      "operation": "contains"
+                    }
+                  },
+                  {
+                    "leftValue": "={{ $json.message.text }}",
+                    "rightValue": "alert",
+                    "operator": {
+                      "type": "string",
+                      "operation": "contains"
+                    }
+                  }
+                ],
+                "combinator": "or"
+              },
+              "renameOutput": true,
+              "outputKey": "هشدار"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra",
+          "renameFallbackOutput": "راهنما"
+        }
+      },
+      "id": "route_cmd",
+      "name": "Route Command",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        220,
+        180
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://raw.githubusercontent.com/iran-market/iran-market.github.io/main/data/latest-toman.json",
+        "options": {
+          "timeout": 20000,
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "eb567eac-b350-4f19-aa67-469e624dddc6",
+      "name": "Get Market Prices",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        560,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const raw = $('Get Market Prices').first().json || {};\nconst cats = (raw.data && raw.data.categories) || {};\nconst bySym = {};\nfor (const list of Object.values(cats)) { for (const it of (list || [])) { if (it && it.symbol) bySym[it.symbol] = Number(it.price); } }\nconst MAP = { GOLD18K: 'GOLD_18K_IRR', GOLD24K: 'GOLD_24K_IRR', SEKE_EMAMI: 'COIN_EMAMI_IRR', SEKE_BAHAR: 'COIN_BAHAR_IRR', SEKE_NIM: 'COIN_HALF_IRR', SEKE_ROB: 'COIN_QUARTER_IRR', USD: 'USD_IRR_FREE', EUR: 'EUR_IRR_FREE', GBP: 'GBP_IRR_FREE' };\nconst priceOf = (sym) => { const n = bySym[MAP[sym]]; return Number.isFinite(n) && n > 0 ? n : null; };\nconst fmt = (n) => (n === null ? '—' : n.toLocaleString('fa-IR'));\nconst rows = [['🟡 طلای ۱۸ عیار (گرم)', priceOf('GOLD18K')],['🟡 طلای ۲۴ عیار (گرم)', priceOf('GOLD24K')],['🪙 سکه امامی', priceOf('SEKE_EMAMI')],['🪙 سکه بهار آزادی', priceOf('SEKE_BAHAR')],['🪙 نیم سکه', priceOf('SEKE_NIM')],['🪙 ربع سکه', priceOf('SEKE_ROB')],['💵 دلار آمریکا', priceOf('USD')],['💶 یورو', priceOf('EUR')],['💷 پوند', priceOf('GBP')]];\nconst ts = raw.data && raw.data.generated_at ? new Date(raw.data.generated_at) : new Date();\nconst updated = ts.toLocaleString('fa-IR', { timeZone: 'Asia/Tehran' });\nlet message = '📊 قیمت بازار (تومان)\\n\\n';\nfor (const [label, price] of rows) { message += label + ': ' + fmt(price) + '\\n'; }\nmessage += '\\n🕒 به‌روزرسانی: ' + updated;\nmessage += '\\n\\nℹ️ برای ثبت هشدار بنویسید: هشدار دلار 200000';\nconst chatId = $('Telegram Trigger').first().json.message.chat.id;\nreturn [{ json: { message, chatId: String(chatId) } }];"
+      },
+      "id": "code_price",
+      "name": "Build Price Message",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        890,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "={{ $json.chatId }}",
+        "text": "={{ $json.message }}",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "id": "tg_price",
+      "name": "Send Prices to User",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1110,
+        0
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "REPLACE_WITH_TELEGRAM_CRED",
+          "name": "Telegram Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const text = String($json.message.text || '');\nconst chatId = $json.message.chat.id;\nconst toEn = (s) => s.replace(/[۰-۹]/g, (d) => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d));\nconst numbers = (text.match(/[\\d۰-۹]{2,}/g) || []).map((s) => Number(toEn(s))).filter((n) => Number.isFinite(n) && n > 0);\nconst target = numbers.length ? Math.max(...numbers) : 0;\nconst assets = [{ sym: 'SEKE_NIM', label: 'نیم سکه', kw: ['نیم'] },{ sym: 'SEKE_ROB', label: 'ربع سکه', kw: ['ربع'] },{ sym: 'SEKE_BAHAR', label: 'سکه بهار آزادی', kw: ['بهار'] },{ sym: 'SEKE_EMAMI', label: 'سکه امامی', kw: ['امامی','تمام','سکه'] },{ sym: 'GOLD24K', label: 'طلای ۲۴ عیار', kw: ['24','۲۴'] },{ sym: 'GOLD18K', label: 'طلای ۱۸ عیار', kw: ['طلا','18','۱۸','هجده'] },{ sym: 'EUR', label: 'یورو', kw: ['یورو'] },{ sym: 'GBP', label: 'پوند', kw: ['پوند'] },{ sym: 'USD', label: 'دلار', kw: ['دلار'] }];\nconst found = assets.find((a) => a.kw.some((k) => text.includes(k))) || { sym: 'USD', label: 'دلار' };\nconst direction = text.includes('پایین') || text.includes('کمتر') || text.includes('زیر') ? 'below' : 'above';\nreturn [{ json: { chatId: String(chatId), asset: found.sym, assetLabel: found.label, target, direction, valid: target > 0 } }];"
+      },
+      "id": "code_parse",
+      "name": "Parse Alert Command",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        450,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "row",
+        "operation": "insert",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "name",
+          "value": "price_alerts"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "chatId": "={{ $json.chatId }}",
+            "asset": "={{ $json.asset }}",
+            "assetLabel": "={{ $json.assetLabel }}",
+            "target": "={{ $json.target }}",
+            "direction": "={{ $json.direction }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "chatId",
+              "displayName": "chatId",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "asset",
+              "displayName": "asset",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "assetLabel",
+              "displayName": "assetLabel",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "target",
+              "displayName": "target",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "direction",
+              "displayName": "direction",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "dt_insert",
+      "name": "Save Alert",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        670,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "={{ $('Parse Alert Command').item.json.chatId }}",
+        "text": "=✅ هشدار قیمت ثبت شد.\n\nدارایی: {{ $('Parse Alert Command').item.json.assetLabel }}\nقیمت هدف: {{ $('Parse Alert Command').item.json.target.toLocaleString('fa-IR') }} تومان\nجهت: {{ $('Parse Alert Command').item.json.direction === 'above' ? 'رسیدن به بالاتر از این عدد' : 'افت به پایین‌تر از این عدد' }}\n\nبه‌محض رسیدن قیمت به این عدد، همین‌جا به شما خبر می‌دهیم.",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "id": "tg_confirm",
+      "name": "Confirm Alert",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        890,
+        200
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "REPLACE_WITH_TELEGRAM_CRED",
+          "name": "Telegram Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "={{ $json.message.chat.id }}",
+        "text": "=👋 به ربات قیمت لحظه‌ای طلا، سکه و دلار خوش آمدید.\n\n📌 دستورها:\n• برای دیدن قیمت‌ها بنویسید: قیمت\n• برای ثبت هشدار بنویسید: هشدار سکه 190000000\n• برای هشدار نزولی بنویسید: هشدار دلار 180000 پایین\n\nقیمت‌ها لحظه‌ای از بازار دریافت می‌شوند.",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "id": "tg_help",
+      "name": "Send Help",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        450,
+        400
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "REPLACE_WITH_TELEGRAM_CRED",
+          "name": "Telegram Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 10
+            }
+          ]
+        }
+      },
+      "id": "cron",
+      "name": "Every 10 Minutes",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        620
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://raw.githubusercontent.com/iran-market/iran-market.github.io/main/data/latest-toman.json",
+        "options": {
+          "timeout": 20000,
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          }
+        }
+      },
+      "id": "a361f77f-f83e-44ae-a0b8-f34a6ef738f9",
+      "name": "Get Market Prices (Alerts)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        335,
+        620
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "row",
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "name",
+          "value": "price_alerts"
+        },
+        "returnAll": true,
+        "filters": {
+          "conditions": []
+        }
+      },
+      "id": "dt_get",
+      "name": "Get Active Alerts",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        670,
+        620
+      ]
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const raw = $('Get Market Prices (Alerts)').first().json || {};\nconst cats = (raw.data && raw.data.categories) || {};\nconst bySym = {};\nfor (const list of Object.values(cats)) { for (const it of (list || [])) { if (it && it.symbol) bySym[it.symbol] = Number(it.price); } }\nconst MAP = { GOLD18K: 'GOLD_18K_IRR', GOLD24K: 'GOLD_24K_IRR', SEKE_EMAMI: 'COIN_EMAMI_IRR', SEKE_BAHAR: 'COIN_BAHAR_IRR', SEKE_NIM: 'COIN_HALF_IRR', SEKE_ROB: 'COIN_QUARTER_IRR', USD: 'USD_IRR_FREE', EUR: 'EUR_IRR_FREE', GBP: 'GBP_IRR_FREE' };\nconst priceOf = (sym) => { const n = bySym[MAP[sym]]; return Number.isFinite(n) && n > 0 ? n : null; };\nconst out = [];\nfor (const item of $input.all()) { const a = item.json; const current = priceOf(a.asset); if (current === null) continue; const target = Number(a.target); const hit = a.direction === 'below' ? current <= target : current >= target; if (!hit) continue; out.push({ json: { alertId: a.id, chatId: String(a.chatId), assetLabel: a.assetLabel, target, current, direction: a.direction } }); }\nreturn out;"
+      },
+      "id": "code_check",
+      "name": "Check Triggered Alerts",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        890,
+        620
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "message",
+        "operation": "sendMessage",
+        "chatId": "={{ $json.chatId }}",
+        "text": "=🔔 هشدار قیمت!\n\n{{ $json.assetLabel }} به {{ $json.current.toLocaleString(\"fa-IR\") }} تومان رسید.\n(قیمت هدف شما: {{ $json.target.toLocaleString(\"fa-IR\") }} تومان)",
+        "additionalFields": {
+          "appendAttribution": false
+        }
+      },
+      "id": "tg_alert",
+      "name": "Send Price Alert",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        1110,
+        620
+      ],
+      "credentials": {
+        "telegramApi": {
+          "id": "REPLACE_WITH_TELEGRAM_CRED",
+          "name": "Telegram Bot"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "row",
+        "operation": "deleteRows",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "name",
+          "value": "price_alerts"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "id",
+              "condition": "eq",
+              "keyValue": "={{ $('Check Triggered Alerts').item.json.alertId }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "dt_delete",
+      "name": "Remove Fired Alert",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1330,
+        620
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 🤖 بخش پاسخ‌گویی (تلگرام)\nکاربر پیام می‌دهد → دستور تشخیص داده می‌شود → قیمت بازار (طلا + سکه + ارز) یا ثبت هشدار.\n\n**دستورها:** «قیمت» ، «هشدار دلار 200000»",
+        "height": 140,
+        "width": 1000,
+        "color": 4
+      },
+      "id": "note_query",
+      "name": "note_query",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        180,
+        -220
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## ⏰ بخش هشدار خودکار (هر ۱۰ دقیقه)\nقیمت طلا، سکه و ارز گرفته می‌شود → هشدارهای فعال بررسی می‌شوند → هرکدام که به هدف رسید، پیام می‌رود و حذف می‌شود.",
+        "height": 130,
+        "width": 1200,
+        "color": 5
+      },
+      "id": "note_alert",
+      "name": "note_alert",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        0,
+        460
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## ⚙️ پیش‌نیازها\n1. Data Table به نام `price_alerts` با ستون‌های: chatId, asset, assetLabel, target, direction\n2. کردنشیال ربات تلگرام\n3. منبع قیمت رایگان و بدون توکن است (iran-market / TGJU، هر ۳۰ دقیقه) — کردنشیالی لازم نیست",
+        "height": 300,
+        "width": 430,
+        "color": 6
+      },
+      "id": "note_setup",
+      "name": "note_setup",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        1230,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Route Command",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route Command": {
+      "main": [
+        [
+          {
+            "node": "Get Market Prices",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Parse Alert Command",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Help",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Price Message": {
+      "main": [
+        [
+          {
+            "node": "Send Prices to User",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Alert Command": {
+      "main": [
+        [
+          {
+            "node": "Save Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Alert": {
+      "main": [
+        [
+          {
+            "node": "Confirm Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Every 10 Minutes": {
+      "main": [
+        [
+          {
+            "node": "Get Market Prices (Alerts)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Active Alerts": {
+      "main": [
+        [
+          {
+            "node": "Check Triggered Alerts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Triggered Alerts": {
+      "main": [
+        [
+          {
+            "node": "Send Price Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Price Alert": {
+      "main": [
+        [
+          {
+            "node": "Remove Fired Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Market Prices": {
+      "main": [
+        [
+          {
+            "node": "Build Price Message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Market Prices (Alerts)": {
+      "main": [
+        [
+          {
+            "node": "Get Active Alerts",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "tags": []
+}

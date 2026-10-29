@@ -1,0 +1,81 @@
+{
+  "_comment": "One case per representative phrasing gathered in the interview. At least one expectation per case.",
+  "cases": [
+    {
+      "id": "design-system-fa-plan",
+      "prompt": "یک سامانه پاسخ‌گویی اولیا با n8n برام طراحی کن؛ اول طرح جدول‌ها و فهرست نودهای هر جریان رو بده",
+      "expect": {
+        "skill": "design-system",
+        "output_contains": ["تأیید"]
+      },
+      "max_turns": 6
+    },
+    {
+      "id": "design-system-en-plan",
+      "prompt": "Design the database schema and node plan for the school parent-support system before building anything.",
+      "expect": {
+        "skill": "design-system"
+      },
+      "max_turns": 6
+    },
+    {
+      "id": "build-flow-fa-flow1",
+      "prompt": "جریان اول (منوی عمومی) رو برام بساز",
+      "expect": {
+        "skill": "build-flow",
+        "output_contains": ["design-system"]
+      },
+      "max_turns": 6
+    },
+    {
+      "id": "build-flow-fa-flow2",
+      "prompt": "حالا جریان دوم یعنی تیکتینگ اولیا رو پیاده کن",
+      "expect": {
+        "skill": "build-flow"
+      },
+      "max_turns": 6
+    },
+    {
+      "id": "finalize-fa-setup-guide",
+      "prompt": "راهنمای راه‌اندازی و چک‌لیست تست دستی رو برام بنویس",
+      "expect": {
+        "skill": "finalize-deliverables"
+      },
+      "max_turns": 6
+    },
+    {
+      "id": "flow-auditor-catches-violation",
+      "prompt": "از flow-auditor بخواه فایل eval/fixtures/bad-flow-sample.json رو در برابر قیدهای سخت بررسی کند و خط VERDICT رو دقیقاً همان‌طور که subagent گزارش داده، کلمه به کلمه در پاسخت نقل کن",
+      "expect": {
+        "subagent": "flow-auditor",
+        "output_contains": ["VERDICT: FAIL"]
+      },
+      "max_turns": 6
+    },
+    {
+      "id": "flow-auditor-passes-clean-flow",
+      "prompt": "از flow-auditor بخواه فایل eval/fixtures/good-flow-sample.json رو در برابر قیدهای سخت بررسی کند و خط VERDICT رو دقیقاً همان‌طور که subagent گزارش داده، کلمه به کلمه در پاسخت نقل کن",
+      "expect": {
+        "subagent": "flow-auditor",
+        "output_contains": ["VERDICT: PASS"]
+      },
+      "max_turns": 6
+    },
+    {
+      "id": "retro-trigger",
+      "prompt": "retro بزن و درس‌های تکراری رو به rule تبدیل کن",
+      "expect": {
+        "skill": "retro"
+      },
+      "max_turns": 6
+    },
+    {
+      "id": "negative-unrelated",
+      "prompt": "برای یک کیک ساده چند تا تخم‌مرغ لازم دارم؟",
+      "expect": {
+        "output_not_contains": ["docs/system-plan.md", "workflows/flow"]
+      },
+      "max_turns": 4
+    }
+  ]
+}

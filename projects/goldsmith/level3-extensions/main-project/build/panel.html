@@ -1,0 +1,530 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>پنل مدیریت طلافروشی</title>
+<link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet">
+<style>
+:root{--gold:#b8860b;--gold2:#7a5901;--bg:#f7f4ec;--card:#fff;--ink:#2b2b2b;--mute:#7a7366;--line:#ece4d2;--ok:#1f8a4c;--err:#c0392b;--soft:#faf6ec}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:Vazirmatn,Tahoma,Arial,sans-serif;font-size:14px;line-height:1.7}
+.wrap{max-width:1200px;margin:0 auto;padding:14px}
+header{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#fff;border-radius:16px;padding:14px 18px;display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+header h1{margin:0;font-size:19px}.rate{font-size:12.5px;opacity:.95}
+nav{display:flex;gap:6px;margin:12px 0;flex-wrap:wrap}
+nav button{white-space:nowrap;border:1px solid var(--line);background:#fff;color:var(--ink);padding:8px 13px;border-radius:10px;font:inherit;font-weight:700;cursor:pointer}
+nav button.on{background:var(--gold);border-color:var(--gold);color:#fff}
+.tab{display:none}.tab.on{display:block}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:12px}
+.card h2{margin:0 0 10px;font-size:16px}.card h3{margin:12px 0 8px;font-size:14px;color:var(--gold2)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;margin-bottom:12px}
+.kpi{background:#fff;border:1px solid var(--line);border-radius:14px;padding:11px 13px}
+.kpi .l{color:var(--mute);font-size:12px}.kpi .v{font-size:18px;font-weight:800;margin-top:2px}.kpi .s{font-size:11.5px;color:var(--mute)}
+.pos{color:var(--ok)}.neg{color:var(--err)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+th{background:var(--soft);color:#5c5341;font-weight:700;position:sticky;top:0}
+.tbl{overflow:auto;max-height:480px;border:1px solid var(--line);border-radius:10px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px 12px}.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px 12px}.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px 12px}
+@media (max-width:800px){.g2,.g3,.g4{grid-template-columns:1fr 1fr}}@media (max-width:520px){.g2,.g3,.g4{grid-template-columns:1fr}}
+label{display:block;font-size:12px;color:var(--mute);margin-bottom:3px}
+input,select,textarea{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:9px;font:inherit;background:#fff;color:var(--ink)}
+input[type=checkbox],input[type=radio]{width:auto}
+input:focus,select:focus{outline:2px solid rgba(184,134,11,.3);border-color:var(--gold)}
+.btn{background:var(--gold);color:#fff;border:0;border-radius:10px;padding:9px 16px;font:inherit;font-weight:700;cursor:pointer}
+.btn.ghost{background:#fff;color:var(--gold2);border:1px solid var(--gold)}.btn.sm{padding:3px 9px;font-size:12px;border-radius:7px}.btn.red{background:#fff;color:var(--err);border:1px solid var(--err)}
+.btn:disabled{opacity:.6;cursor:wait}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.between{justify-content:space-between}
+.preview{background:var(--soft);border:1px dashed var(--gold);border-radius:10px;padding:10px 12px;font-size:13px;margin:8px 0}
+.seg{display:inline-flex;border:1px solid var(--gold);border-radius:10px;overflow:hidden}.seg label{margin:0;padding:6px 12px;cursor:pointer;color:var(--gold2);font-size:13px}
+.seg input{display:none}.seg input:checked+span{background:var(--gold);color:#fff;border-radius:7px;padding:3px 8px}
+.badge{display:inline-block;padding:1px 8px;border-radius:20px;font-size:11px}
+.b-in{background:#e8f6ee;color:var(--ok)}.b-out{background:#eee;color:#666}.b-buy{background:#e8f0fb;color:#2c5aa0}.b-sell{background:#fdf3e1;color:#8a6d1b}.b-void{background:#fdecea;color:var(--err)}
+.help{font-size:12px;color:var(--mute);background:var(--soft);border-radius:9px;padding:7px 10px;margin:6px 0}
+details summary{cursor:pointer;color:var(--gold2);font-weight:700;margin:8px 0}
+#toast{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);padding:10px 18px;border-radius:10px;color:#fff;display:none;z-index:30;max-width:92%}
+#login{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:20}
+#login .card{width:min(380px,92%);text-align:center}
+#modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:flex-start;justify-content:center;z-index:25;overflow:auto;padding:20px 10px}
+#modal .box{background:#fff;border-radius:14px;padding:14px;max-width:700px;width:100%}
+.muted{color:var(--mute);font-size:12px}
+.pboard{display:grid;grid-template-columns:repeat(auto-fill,minmax(165px,1fr));gap:8px}
+.pb{background:var(--soft);border:1px solid var(--line);border-radius:10px;padding:7px 10px}.pb .l{font-size:11.5px;color:var(--mute)}.pb .v{font-weight:800;font-size:15px}.pb .s{font-size:11px;color:var(--mute)}
+.pick{max-height:220px;overflow:auto;border:1px solid var(--line);border-radius:10px;padding:6px 8px;background:#fff}.pick label{display:flex;gap:6px;align-items:center;color:var(--ink);font-size:13px;margin:3px 0;cursor:pointer}
+.labels{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}.lbl{width:190px;border:1px dashed #999;border-radius:6px;padding:4px 6px;text-align:center;font-size:11px;line-height:1.5}.lbl svg{max-width:100%;height:42px}
+.sz-50x30 .lbl{width:50mm;min-height:30mm}.sz-40x25 .lbl{width:40mm;min-height:25mm;font-size:9px}.sz-40x25 .lbl svg{height:30px}.sz-60x40 .lbl{width:60mm;min-height:40mm;font-size:12px}.sz-30x20 .lbl{width:30mm;min-height:20mm;font-size:8px;padding:2px}.sz-30x20 .lbl svg{height:24px}
+.chart{width:100%;height:auto;display:block}.chart text{font-family:inherit;fill:#5c5341;font-size:11px}.legend{display:flex;gap:14px;font-size:12px;color:var(--mute);margin:4px 0}.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-left:5px;vertical-align:middle}
+.badge.b-con{background:#f3e8ff;color:#6b21a8}.badge.b-sil{background:#eef2f7;color:#475569}
+.userbox{font-size:12px;opacity:.95}.mini{display:inline-flex;gap:6px;align-items:center}
+.cert{direction:rtl;max-width:520px;margin:auto;border:3px double #b8860b;border-radius:14px;padding:16px;font-size:13px}.cert h3{text-align:center;color:#7a5901;margin:4px 0 10px}.cert img{max-width:160px;max-height:160px;border-radius:10px;display:block;margin:6px auto}.cert table{width:100%}.cert td{border-bottom:1px dashed #e5dcc5;padding:4px 6px;white-space:normal}
+@media print{body *{visibility:hidden}#printArea,#printArea *{visibility:visible}#printArea{position:absolute;inset:0}
+ body.thermal #printArea{width:72mm;font-size:11px}body.thermal #printArea table{font-size:10px}body.thermal #printArea th,body.thermal #printArea td{padding:2px}
+ body.labels-print .lbl{border:0;page-break-after:always}}
+</style>
+</head>
+<body>
+<div id="login"><div class="card">
+  <h2>🔐 ورود به پنل مدیریت طلافروشی</h2>
+  <div style="margin:10px 0"><input id="un" placeholder="نام کاربری" dir="ltr" value="admin" autocomplete="username"></div>
+  <div style="margin:10px 0"><input id="pw" type="password" placeholder="رمز ورود" dir="ltr" autocomplete="current-password"></div>
+  <button class="btn" id="loginBtn" style="width:100%">ورود</button>
+  <div class="muted" id="loginMsg" style="margin-top:8px"></div>
+  <div class="muted" style="margin-top:10px"><a href="https://n8n.aifardainstitute.ir/webhook/gold-shop" target="_blank" style="color:var(--gold2)">← بازگشت به سایت فروشگاه</a></div>
+</div></div>
+
+<div class="wrap" id="app" style="display:none">
+  <header>
+    <div><h1 id="shopTitle">🥇 پنل مدیریت طلافروشی</h1><div class="rate" id="rateLine">…</div></div>
+    <div class="row"><span class="userbox" id="meBox"></span><select id="brSel" style="width:auto;display:none"></select><a class="btn ghost" id="sheetBtn" target="_blank">📗 گوگل‌شیت زنده</a><button class="btn ghost" id="xlsBtn">⬇️ خروجی اکسل</button><button class="btn ghost" id="reload">🔄</button><button class="btn ghost" id="logout">خروج</button></div>
+  </header>
+  <nav id="nav">
+    <button data-t="dash" class="on">📊 داشبورد</button><button data-t="sell">🛒 فروش</button><button data-t="buy">📥 خرید</button><button data-t="ab">🧈 آبشده</button><button data-t="coin">🪙 سکه</button>
+    <button data-t="inv">📦 موجودی</button><button data-t="acc">👥 مشتریان و حساب‌ها</button><button data-t="chq">🧾 چک‌ها</button><button data-t="save">💰 پس‌انداز طلایی</button><button data-t="ws" data-roles="owner,accountant">🔨 کارگاه و امانی</button><button data-t="ord">🛠️ سفارش و تعمیر</button>
+    <button data-t="cash">💵 صندوق و هزینه</button><button data-t="calc">🧮 ماشین‌حساب</button><button data-t="rep" data-roles="owner,accountant">📈 گزارش مالی</button><button data-t="books" data-roles="owner,accountant">📒 دفاتر و مالیات</button><button data-t="sec" data-roles="owner">🛡️ کاربران و پشتیبان</button><button data-t="set">⚙️ تنظیمات</button>
+  </nav>
+
+  <section class="tab on" id="t-dash">
+    <div class="card"><div class="row between"><h2 style="margin:0">📋 تابلوی نرخ روز</h2><span class="muted" id="pbTime"></span></div><div class="pboard" id="pboard" style="margin-top:8px"></div></div>
+    <div class="kpis" id="kpis"></div>
+    <div class="g2"><div class="card" id="instDueCard"><h2>📅 اقساط سررسیده و نزدیک (۷ روز)</h2><div id="instDue"></div></div><div class="card"><h2>🧾 چک‌های سررسید (۷ روز)</h2><div id="chqDue"></div></div></div>
+    <div class="g2"><div class="card"><h2>🎉 مناسبت‌های ۷ روز آینده</h2><div id="occList"></div></div><div class="card"><h2>🛠️ سفارش‌های باز</h2><div id="openOrders"></div></div></div>
+    <div class="card"><h2>آخرین تراکنش‌ها</h2><div class="tbl" id="recent"></div></div>
+  </section>
+
+  <section class="tab" id="t-sell"><div class="card"><h2>🛒 صدور فاکتور فروش</h2>
+    <form id="sellForm">
+      <h3>۱) کالاها</h3>
+      <div class="row"><input id="itemSearch" placeholder="جستجو یا اسکن بارکد…" style="max-width:260px"><select id="itemPick" style="max-width:420px"></select><button type="button" class="btn ghost" id="addToCart">➕ افزودن به فاکتور</button></div>
+      <div class="tbl" id="cart" style="margin-top:8px"></div>
+      <h3>۲) مشتری</h3><div id="sellParty"></div>
+      <h3>۳) قیمت‌گذاری</h3>
+      <div class="g4">
+        <div><label>نحوه‌ی قیمت</label><select name="priceMode"><option value="calc">با اجرت و سود</option><option value="fixed">مبلغ توافقی کل</option></select></div>
+        <div><label>نوع اجرت</label><select name="feeMode"><option value="pct">درصدی</option><option value="gram">گرمی (تومان برای هر گرم)</option></select></div>
+        <div class="fee-pct"><label>درصد اجرت</label><input name="feePct" inputmode="decimal"></div>
+        <div class="fee-gram" style="display:none"><label>اجرت هر گرم (تومان)</label><input name="feePerGram" inputmode="numeric"></div>
+        <div><label>درصد سود</label><input name="profitPct" inputmode="decimal"></div>
+        <div><label>مبلغ توافقی کل (تومان)</label><input name="amount" inputmode="numeric"></div>
+        <div><label>نرخ ۱۸ عیار</label><select name="rateMode"><option value="market">نرخ روز بازار</option><option value="mazaneh">از مظنه</option><option value="ounce">از انس × دلار</option><option value="manual">دستی</option></select></div>
+        <div><label>نرخ دستی / مظنه / انس</label><input name="rate18" inputmode="numeric" placeholder="فقط برای دستی"></div>
+        <div><label>نرخ نقره ۹۲۵ (خالی = روز)</label><input name="silverRate" inputmode="numeric"></div>
+        <div><label>تخفیف (تومان)</label><input name="discount" inputmode="numeric"></div>
+        <div><label>&nbsp;</label><label class="row" style="color:var(--ink)"><input type="checkbox" name="vatOn"> مالیات بر ارزش افزوده (روی اجرت و سود)</label></div>
+      </div>
+      <details><summary>♻️ تعویض: مشتری طلای کهنه می‌دهد</summary><div class="g3">
+        <div><label>وزن طلای کهنه (گرم)</label><input name="tradeWeight" inputmode="decimal"></div>
+        <div><label>عیار</label><select name="tradeKarat"><option value="750">۷۵۰</option><option value="740">۷۴۰</option><option value="705">۷۰۵</option><option value="900">۹۰۰</option><option value="995">۹۹۵</option><option value="585">۵۸۵</option></select></div>
+        <div><label>درصد کسر افت</label><input name="tradeDeduction" inputmode="decimal"></div></div></details>
+      <h3>۴) پرداخت</h3>
+      <div class="g4">
+        <div><label>روش پرداخت</label><select name="payMethod"><option>نقد</option><option>کارتخوان</option><option>کارت به کارت</option><option>چک</option><option>ترکیبی</option></select></div>
+        <div class="chq-f" style="display:none"><label>بانک چک</label><input name="chequeBank"></div><div class="chq-f" style="display:none"><label>شماره چک</label><input name="chequeNo"></div>
+        <div class="chq-f" style="display:none"><label>شناسه صیاد</label><input name="chequeSayad" dir="ltr"></div><div class="chq-f" style="display:none"><label>سررسید چک</label><input name="chequeDue" dir="ltr" placeholder="1405/08/15"></div>
+        <div><label>مبلغ پرداختی الان (خالی = کامل)</label><input name="paid" inputmode="numeric"></div>
+        <div><label>&nbsp;</label><label class="row" style="color:var(--ink)"><input type="checkbox" name="sendEmail" checked> ارسال فاکتور به ایمیل مشتری</label></div>
+        <div><label>یادداشت</label><input name="note"></div>
+      </div>
+      <details class="inst"><summary>📅 فروش اقساطی: تقسیط مانده‌ی نسیه</summary><div class="g3">
+        <div><label>تعداد قسط</label><input name="instCount" inputmode="numeric" placeholder="مثلاً 6"></div>
+        <div><label>سررسید قسط اول</label><input name="instStart" dir="ltr" placeholder="1405/08/12"></div>
+        <div><label>فاصله‌ی اقساط (ماه)</label><input name="instEvery" value="1" inputmode="numeric"></div></div>
+        <div class="help">مبلغ «پرداختی الان» را وارد کنید؛ باقی‌مانده به‌طور مساوی تقسیط می‌شود و سررسیدها در داشبورد و تلگرام یادآوری می‌شوند.</div></details>
+      <div class="preview" id="sellPreview">کالا را به فاکتور اضافه کنید.</div>
+      <button class="btn" type="submit">✅ ثبت فروش و صدور فاکتور</button>
+    </form></div>
+  </section>
+
+  <section class="tab" id="t-buy">
+    <div class="card"><div class="row between"><h2 style="margin:0">📥 ثبت خرید</h2><div class="seg"><label><input type="radio" name="buyKind" value="supplier" checked><span>خرید از همکار / تولیدی</span></label><label><input type="radio" name="buyKind" value="old"><span>خرید طلای کهنه از مشتری</span></label></div></div>
+      <form id="buyForm" style="margin-top:10px">
+        <div class="g4">
+          <div class="sup"><label>عنوان کالا</label><input name="title" placeholder="مثلاً انگشتر رینگی"></div>
+          <div class="sup"><label>دسته</label><select name="category"><option>انگشتر</option><option>گردنبند</option><option>دستبند</option><option>گوشواره</option><option>سرویس</option><option>النگو</option><option>پلاک</option><option>سکه پارسیان</option><option>شمش</option><option>سایر</option></select></div>
+          <div class="sup"><label>تعداد (اقلام یکسان)</label><input name="qty" value="1" inputmode="numeric"></div>
+          <div class="sup"><label>فلز</label><select name="metal"><option value="">طلا</option><option value="silver">نقره</option></select></div>
+          <div><label>وزن هر قلم (گرم) *</label><div class="mini"><input name="weight" inputmode="decimal" required><button type="button" class="btn ghost sm scale">⚖️</button></div></div>
+          <div><label>عیار</label><select name="karat"><option value="750">۷۵۰ (۱۸ عیار)</option><option value="925">۹۲۵ (نقره)</option><option value="999">۹۹۹ (نقره خالص)</option><option value="740">۷۴۰</option><option value="705">۷۰۵</option><option value="900">۹۰۰ (سکه)</option><option value="995">۹۹۵ (۲۴ عیار)</option><option value="585">۵۸۵ (۱۴ عیار)</option></select></div>
+          <div class="sup"><label>اجرت پرداختی هر قلم (تومان)</label><input name="makingCost" value="0" inputmode="numeric"></div>
+          <div class="sup"><label>قیمت سنگ / نگین هر قلم (تومان)</label><input name="stoneCost" value="0" inputmode="numeric"></div>
+          <div class="sup"><label>مشخصات سنگ (نوع، قیراط، تعداد)</label><input name="stones" placeholder="برلیان ۰٫۱۵ قیراط × ۳"></div>
+          <div class="sup"><label>لینک عکس جنس (اختیاری)</label><input name="photoUrl" dir="ltr"></div>
+          <div class="old" style="display:none"><label>درصد کسر افت</label><input name="deductionPct" inputmode="decimal"></div>
+          <div><label>نرخ</label><select name="rateMode"><option value="market">نرخ روز بازار</option><option value="mazaneh">از مظنه</option><option value="ounce">از انس × دلار</option><option value="manual">دستی</option></select></div>
+          <div><label>نرخ دستی (تومان)</label><input name="buyRate18" inputmode="numeric"></div>
+        </div>
+        <h3>طرف معامله</h3><div id="buyParty"></div>
+        <h3>تسویه</h3>
+        <div class="g4">
+          <div class="sup"><label>نحوه‌ی تسویه</label><select name="settle"><option value="cash">نقد کامل</option><option value="credit">نسیه تومانی</option><option value="gold">طلایی (بدهی به گرم + اجرت)</option><option value="consign">امانی از بنکدار (پس از فروش تسویه)</option></select></div>
+          <div><label>روش پرداخت</label><select name="payMethod"><option>نقد</option><option>کارت به کارت</option><option>چک</option><option>کارتخوان</option></select></div>
+          <div><label>مبلغ پرداختی الان</label><input name="paid" inputmode="numeric" placeholder="خالی = کامل"></div>
+          <div><label>یادداشت</label><input name="note"></div>
+        </div>
+        <div class="help sup">💡 <b>طلایی</b>: وقتی از همکار به‌صورت «گرم به گرم» خرید می‌کنید؛ بدهی شما به گرم طلا ثبت می‌شود و بعداً با «پرداخت طلایی» تسویه می‌کنید.</div>
+        <div class="preview" id="buyPreview"></div>
+        <button class="btn" type="submit">✅ ثبت خرید</button>
+      </form></div>
+  </section>
+
+  <section class="tab" id="t-inv">
+    <div class="card"><h2>موجودی به تفکیک عیار</h2><div class="tbl" id="byKarat"></div></div>
+    <div class="card"><div class="row between" style="margin-bottom:8px"><h2 style="margin:0">فهرست کالاها</h2>
+      <div class="row"><select id="invFilter" style="width:auto"><option value="in_stock">موجود</option><option value="sold">فروخته‌شده</option><option value="melted">ذوب‌شده</option><option value="workshop">در کارگاه</option><option value="consign">امانی</option><option value="returned">برگشت امانی</option><option value="all">همه</option></select><select id="invCat" style="width:auto"></select><input id="invSearch" placeholder="جستجو…" style="width:150px"><button class="btn ghost sm" id="labelsBtn" type="button">🏷️ چاپ اتیکت فهرست</button><span class="mini br-only" style="display:none"><select id="trBranch" style="width:auto"></select><button class="btn ghost sm" id="trBtn" type="button">↔️ انتقال تیک‌خورده‌ها</button></span></div></div>
+      <div class="tbl" id="invTable"></div></div>
+  </section>
+
+  <section class="tab" id="t-acc">
+    <div class="kpis" id="accKpis"></div>
+    <div class="g2">
+      <div class="card"><h2 id="partyFormTitle">➕ مشتری / همکار جدید</h2>
+        <form id="partyForm"><input type="hidden" name="code">
+          <div class="g2">
+            <div><label>نوع</label><select name="kind"><option value="customer">مشتری</option><option value="supplier">همکار / تولیدی / بنکدار</option><option value="maker">سازنده / کارگاه</option></select></div>
+            <div><label>نام *</label><input name="name" required></div>
+            <div><label>تلفن</label><input name="phone" inputmode="tel"></div>
+            <div><label>ایمیل</label><input name="email" type="email" dir="ltr"></div>
+            <div><label>تولد (ماه / روز)</label><div class="row"><select name="bMonth" class="months" style="flex:1"></select><select name="bDay" class="days" style="flex:1"></select></div></div>
+            <div><label>سالگرد ازدواج (ماه / روز)</label><div class="row"><select name="aMonth" class="months" style="flex:1"></select><select name="aDay" class="days" style="flex:1"></select></div></div>
+            <div><label>Telegram Chat ID</label><input name="telegramChatId" dir="ltr"></div>
+            <div><label>یادداشت</label><input name="notes"></div>
+            <div><label>کد ملی</label><input name="nationalId" dir="ltr"></div><div><label>کد اقتصادی</label><input name="economicCode" dir="ltr"></div>
+            <div><label>کد پستی</label><input name="postalCode" dir="ltr"></div><div><label>آدرس</label><input name="address"></div>
+          </div>
+          <div class="row" style="margin-top:8px"><button class="btn" type="submit">💾 ذخیره</button><button class="btn ghost" type="button" id="partyReset">جدید</button></div>
+        </form></div>
+      <div class="card"><h2>💳 دریافت / پرداخت (تسویه حساب)</h2>
+        <form id="payForm">
+          <div class="g2">
+            <div><label>طرف حساب *</label><select name="partyCode" id="payParty" required></select></div>
+            <div><label>نوع</label><select name="direction"><option value="receive">دریافت از او</option><option value="pay">پرداخت به او</option></select></div>
+            <div><label>مبلغ (تومان)</label><input name="amount" inputmode="numeric"></div>
+            <div><label>یا مقدار طلا (گرم ۱۸ عیار)</label><input name="grams" inputmode="decimal"></div>
+            <div><label>روش</label><select name="payMethod"><option>نقد</option><option>کارتخوان</option><option>کارت به کارت</option><option>چک</option></select></div>
+            <div><label>یادداشت</label><input name="note"></div>
+          </div>
+          <div class="preview" id="payInfo">طرف حساب را انتخاب کنید.</div>
+          <button class="btn" type="submit">✅ ثبت</button>
+        </form></div>
+    </div>
+    <div class="card"><div class="row between" style="margin-bottom:8px"><h2 style="margin:0">فهرست حساب‌ها</h2><div class="row"><select id="accFilter" style="width:auto"><option value="all">همه</option><option value="customer">مشتریان</option><option value="supplier">همکاران</option><option value="debt">فقط دارای مانده</option></select><input id="accSearch" placeholder="جستجو…" style="width:150px"></div></div>
+      <div class="tbl" id="accTable"></div></div>
+    <div class="card"><div class="row between" style="margin-bottom:8px"><h2 style="margin:0">📅 اقساط</h2><select id="instFilter" style="width:auto"><option value="open">باز و معوق</option><option value="all">همه</option></select></div><div class="tbl" id="instTable"></div></div>
+  </section>
+
+  <section class="tab" id="t-ab">
+    <div class="kpis" id="abKpis"></div>
+    <div class="g2">
+      <div class="card" data-roles="owner,accountant"><h2>📥 خرید آبشده</h2>
+        <form id="abBuyForm"><div class="g2">
+          <div><label>وزن (گرم) *</label><input name="weight" inputmode="decimal" required></div>
+          <div><label>عیار آزمایشگاه *</label><input name="karat" inputmode="numeric" placeholder="مثلاً 740" required></div>
+          <div><label>آزمایشگاه / شماره ری‌گیری</label><input name="cert"></div>
+          <div><label>طرف معامله از نوع</label><select name="partyKind"><option value="supplier">همکار / بنکدار</option><option value="customer">مشتری</option></select></div>
+          <div><label>مظنه</label><select name="rateMode"><option value="market">مظنه‌ی روز</option><option value="manual">دستی</option></select></div>
+          <div><label>مظنه‌ی دستی (تومان هر مثقال)</label><input name="mazaneh" inputmode="numeric"></div>
+          <div><label>کارمزد خرید (تومان هر مثقال، کسر می‌شود)</label><input name="commission" inputmode="numeric"></div>
+          <div><label>تسویه</label><select name="settle"><option value="cash">نقد کامل</option><option value="credit">نسیه تومانی</option><option value="gold">طلایی (بدهی به گرم)</option></select></div>
+          <div><label>روش پرداخت</label><select name="payMethod"><option>نقد</option><option>کارتخوان</option><option>کارت به کارت</option><option>چک</option></select></div>
+          <div><label>پیش‌پرداخت (فقط برای نسیه)</label><input name="paid" inputmode="numeric" placeholder="خالی = صفر"></div>
+        </div>
+        <h3>طرف معامله</h3><div id="abBuyParty"></div>
+        <div class="preview" id="abBuyPreview">وزن و عیار را وارد کنید.</div>
+        <button class="btn" type="submit">✅ ثبت خرید آبشده</button></form></div>
+      <div class="card"><h2>📤 فروش آبشده</h2>
+        <form id="abSellForm">
+          <label>آبشده‌های موجود (انتخاب کنید)</label><div class="pick" id="abSellList"></div>
+          <div class="g2" style="margin-top:8px">
+            <div><label>مظنه</label><select name="rateMode"><option value="market">مظنه‌ی روز</option><option value="manual">دستی</option></select></div>
+            <div><label>مظنه‌ی دستی</label><input name="mazaneh" inputmode="numeric"></div>
+            <div><label>کارمزد فروش (تومان هر مثقال، اضافه می‌شود)</label><input name="commission" inputmode="numeric"></div>
+            <div><label>روش پرداخت</label><select name="payMethod"><option>نقد</option><option>کارتخوان</option><option>کارت به کارت</option><option>چک</option></select></div>
+            <div><label>مبلغ پرداختی الان</label><input name="paid" inputmode="numeric" placeholder="خالی = کامل"></div>
+            <div><label>&nbsp;</label><label class="row" style="color:var(--ink)"><input type="checkbox" name="sendEmail" checked> ایمیل فاکتور</label></div>
+          </div>
+          <h3>خریدار</h3><div id="abSellParty"></div>
+          <div class="preview" id="abSellPreview">آبشده را انتخاب کنید.</div>
+          <button class="btn" type="submit">✅ ثبت فروش آبشده</button></form></div>
+    </div>
+    <div class="card" data-roles="owner,accountant"><h2>🔥 ذوب طلای کهنه و تبدیل به آبشده</h2>
+      <form id="meltForm">
+        <label>اقلامی که به ذوب می‌روند</label><div class="pick" id="meltList"></div>
+        <div class="g4" style="margin-top:8px">
+          <div><label>وزن آبشده‌ی نهایی (گرم) *</label><input name="weight" inputmode="decimal" required></div>
+          <div><label>عیار آزمایشگاه *</label><input name="karat" inputmode="numeric" required></div>
+          <div><label>آزمایشگاه / شماره ری‌گیری</label><input name="cert"></div>
+          <div><label>هزینه‌ی ذوب و آزمایش (تومان)</label><input name="meltFee" inputmode="numeric"></div>
+        </div>
+        <div class="preview" id="meltPreview">اقلام را انتخاب کنید.</div>
+        <button class="btn" type="submit">🔥 ثبت ذوب</button></form></div>
+    <div class="card"><h2>موجودی آبشده</h2><div class="tbl" id="abTable"></div>
+      <div class="help">مظنه = قیمت یک مثقال (۴٫۶۰۸ گرم) طلای ۷۰۵. مثقال هر قطعه = وزن × عیار ÷ ۷۰۵ ÷ ۴٫۶۰۸. نرخ هر گرم ۱۸ عیار = مظنه ÷ ۴٫۳۳۱۸.</div></div>
+  </section>
+
+  <section class="tab" id="t-coin">
+    <div class="kpis" id="coinKpis"></div>
+    <div class="card"><h2>🪙 موجودی سکه</h2><div class="tbl" id="coinTable"></div></div>
+    <div class="g2">
+      <div class="card" data-roles="owner,accountant"><h2>📥 خرید سکه</h2>
+        <form id="coinBuyForm"><div class="g2">
+          <div><label>نوع سکه</label><select name="coin" class="coinSel"></select></div>
+          <div><label>تعداد *</label><input name="qty" inputmode="numeric" required></div>
+          <div><label>قیمت هر عدد</label><select name="rateMode"><option value="market">قیمت روز</option><option value="manual">دستی</option></select></div>
+          <div><label>قیمت دستی هر عدد</label><input name="unitPrice" inputmode="numeric"></div>
+          <div><label>طرف معامله از نوع</label><select name="partyKind"><option value="supplier">همکار / بنکدار</option><option value="customer">مشتری</option></select></div>
+          <div><label>تسویه</label><select name="settle"><option value="cash">نقد کامل</option><option value="credit">نسیه</option></select></div>
+          <div><label>روش پرداخت</label><select name="payMethod"><option>نقد</option><option>کارتخوان</option><option>کارت به کارت</option><option>چک</option></select></div>
+          <div><label>پیش‌پرداخت (فقط برای نسیه)</label><input name="paid" inputmode="numeric" placeholder="خالی = صفر"></div>
+        </div>
+        <h3>طرف معامله</h3><div id="coinBuyParty"></div>
+        <div class="preview" id="coinBuyPreview"></div>
+        <button class="btn" type="submit">✅ ثبت خرید سکه</button></form></div>
+      <div class="card"><h2>📤 فروش سکه</h2>
+        <form id="coinSellForm"><div class="g2">
+          <div><label>نوع سکه</label><select name="coin" class="coinSel"></select></div>
+          <div><label>تعداد *</label><input name="qty" inputmode="numeric" required></div>
+          <div><label>قیمت هر عدد</label><select name="rateMode"><option value="market">قیمت روز</option><option value="manual">دستی</option></select></div>
+          <div><label>قیمت دستی هر عدد</label><input name="unitPrice" inputmode="numeric"></div>
+          <div><label>تخفیف کل (تومان)</label><input name="discount" inputmode="numeric"></div>
+          <div><label>روش پرداخت</label><select name="payMethod"><option>نقد</option><option>کارتخوان</option><option>کارت به کارت</option><option>چک</option></select></div>
+          <div><label>مبلغ پرداختی الان</label><input name="paid" inputmode="numeric" placeholder="خالی = کامل"></div>
+          <div><label>&nbsp;</label><label class="row" style="color:var(--ink)"><input type="checkbox" name="sendEmail" checked> ایمیل فاکتور</label></div>
+        </div>
+        <details class="inst"><summary>📅 فروش اقساطی: تقسیط مانده‌ی نسیه</summary><div class="g3">
+        <div><label>تعداد قسط</label><input name="instCount" inputmode="numeric" placeholder="مثلاً 6"></div>
+        <div><label>سررسید قسط اول</label><input name="instStart" dir="ltr" placeholder="1405/08/12"></div>
+        <div><label>فاصله‌ی اقساط (ماه)</label><input name="instEvery" value="1" inputmode="numeric"></div></div>
+        <div class="help">مبلغ «پرداختی الان» را وارد کنید؛ باقی‌مانده به‌طور مساوی تقسیط می‌شود و سررسیدها در داشبورد و تلگرام یادآوری می‌شوند.</div></details>
+        <h3>خریدار</h3><div id="coinSellParty"></div>
+        <div class="preview" id="coinSellPreview"></div>
+        <button class="btn" type="submit">✅ ثبت فروش سکه</button></form></div>
+    </div>
+    <div class="card"><h2>معاملات سکه</h2><div class="tbl" id="coinTx"></div></div>
+  </section>
+
+  <section class="tab" id="t-ord">
+    <div class="card"><h2>🛠️ ثبت سفارش ساخت / تعمیر</h2>
+      <form id="orderForm">
+        <div id="orderParty"></div>
+        <div class="g4" style="margin-top:8px">
+          <div><label>نوع</label><select name="kind"><option>ساخت سفارشی</option><option>تعمیر</option><option>سفارش از همکار</option><option>حکاکی / پلاک اسم</option></select></div>
+          <div style="grid-column:span 3"><label>شرح سفارش *</label><input name="description" required placeholder="مثلاً گردنبند اسم «سارا» با زنجیر ونیزی"></div>
+          <div><label>وزن تقریبی (گرم)</label><input name="weight" inputmode="decimal"></div>
+          <div><label>عیار</label><select name="karat"><option value="750">۷۵۰</option><option value="740">۷۴۰</option><option value="995">۹۹۵</option></select></div>
+          <div><label>مبلغ برآوردی</label><input name="estimate" inputmode="numeric"></div>
+          <div><label>بیعانه دریافتی</label><input name="deposit" inputmode="numeric"></div>
+          <div><label>تاریخ تحویل</label><input name="dueDate" placeholder="1405/07/20" dir="ltr"></div>
+          <div><label>روش دریافت بیعانه</label><select name="payMethod"><option>نقد</option><option>کارتخوان</option><option>کارت به کارت</option></select></div>
+          <div style="grid-column:span 2"><label>یادداشت</label><input name="note"></div>
+        </div>
+        <button class="btn" type="submit" style="margin-top:8px">✅ ثبت سفارش</button>
+      </form></div>
+    <div class="card"><h2>فهرست سفارش‌ها</h2><div class="tbl" id="orderTable"></div></div>
+  </section>
+
+  <section class="tab" id="t-cash">
+    <div class="card"><div class="row between"><h2 style="margin:0">💵 صندوق</h2><select id="cashPeriod" style="width:auto"><option value="day">امروز</option><option value="month">این ماه</option><option value="all">همه</option></select></div><div class="tbl" id="cashTable" style="margin-top:8px"></div></div>
+    <div class="card"><h2>🧾 ثبت هزینه</h2>
+      <form id="expForm"><div class="g4">
+        <div><label>دسته</label><select name="category"><option>اجاره</option><option>حقوق و دستمزد</option><option>قبوض</option><option>مالیات و عوارض</option><option>تبلیغات</option><option>بسته‌بندی</option><option>تعمیرات</option><option>بیمه</option><option>سایر</option></select></div>
+        <div><label>مبلغ (تومان) *</label><input name="amount" inputmode="numeric" required></div>
+        <div><label>روش پرداخت</label><select name="payMethod"><option>نقد</option><option>کارت به کارت</option><option>کارتخوان</option><option>چک</option></select></div>
+        <div><label>شرح</label><input name="title"></div></div>
+        <button class="btn" type="submit" style="margin-top:8px">✅ ثبت هزینه</button></form></div>
+    <div class="card"><h2>هزینه‌ها</h2><div class="tbl" id="expTable"></div></div>
+    <div class="card"><h2>🔒 بستن صندوق امروز</h2>
+      <div class="preview" id="closeExpected"></div>
+      <form id="closeForm"><div class="g4">
+        <div><label>نقد شمارش‌شده</label><input name="cash" inputmode="numeric"></div><div><label>کارتخوان (طبق رسید)</label><input name="pos" inputmode="numeric"></div>
+        <div><label>کارت به کارت</label><input name="card" inputmode="numeric"></div><div><label>طلای شمارش‌شده (گرم معادل ۱۸)</label><input name="gold" inputmode="decimal" placeholder="خالی = طبق سیستم"></div>
+        <div style="grid-column:span 4"><label>یادداشت</label><input name="note"></div></div>
+        <button class="btn" type="submit" style="margin-top:8px">🔒 ثبت بستن صندوق</button></form>
+      <h3>سابقه‌ی بستن صندوق</h3><div class="tbl" id="closeTable"></div></div>
+  </section>
+
+  <section class="tab" id="t-rep">
+    <div class="card"><div class="row between"><h2 style="margin:0">📈 گزارش مالی</h2><div class="row"><select id="period" style="width:auto"><option value="day">امروز</option><option value="month" selected>این ماه</option><option value="prev">ماه قبل</option><option value="year">امسال</option><option value="all">همه</option></select><button class="btn ghost" id="xlsBtn2">⬇️ خروجی اکسل</button></div></div></div>
+    <div class="kpis" id="repKpis"></div>
+    <div class="card"><h2>📊 فروش و سود واقعی ۱۲ ماه اخیر</h2><div class="legend"><span><i style="background:#b8860b"></i>فروش</span><span><i style="background:#2c5aa0"></i>سود واقعی</span></div><div id="chartMonthly"></div></div>
+    <div class="g2"><div class="card"><h2>📊 سود واقعی به تفکیک دسته</h2><div id="chartCat"></div></div><div class="card"><h2>💤 جنس‌های خوابیده (بیش از ۹۰ روز)</h2><div class="tbl" id="slowTable"></div></div></div>
+    <div class="g2"><div class="card"><h2>سود به تفکیک دسته</h2><div class="tbl" id="byCat"></div></div><div class="card"><h2>برترین مشتریان</h2><div class="tbl" id="topCust"></div></div></div>
+    <div class="card"><h2>دفتر تراکنش‌ها</h2><div class="row" style="margin-bottom:6px"><select id="txType" style="width:auto"><option value="">همه‌ی انواع</option></select><input id="txSearch" placeholder="جستجو…" style="width:160px"></div><div class="tbl" id="txTable"></div></div>
+    <div class="card muted"><b>سود واقعی</b> = مبلغ فروش − بهای تمام‌شده. <b>سود فروش</b> = مبلغ فروش − ارزش طلا به نرخ روز فروش − اجرت پرداختی؛ <b>نوسان</b> = اثر تغییر نرخ طلا از روز خرید تا فروش. <b>سود خالص</b> = سود واقعی − هزینه‌ها. مالیات ارزش افزوده جزو سود نیست.</div>
+  </section>
+
+  <section class="tab" id="t-chq">
+    <div class="kpis" id="chqKpis"></div>
+    <div class="card"><h2>🧾 ثبت چک</h2>
+      <form id="chqForm"><div class="g4">
+        <div><label>نوع</label><select name="dir"><option value="in">دریافتی (از مشتری/همکار)</option><option value="out">پرداختی (صادره‌ی ما)</option></select></div>
+        <div><label>مبلغ (تومان) *</label><input name="amount" inputmode="numeric" required></div>
+        <div><label>سررسید *</label><input name="dueDate" dir="ltr" placeholder="1405/08/15" required></div>
+        <div><label>بانک</label><input name="bank"></div>
+        <div><label>شماره چک</label><input name="number" dir="ltr"></div>
+        <div><label>شناسه صیاد</label><input name="sayad" dir="ltr"></div>
+        <div style="grid-column:span 2"><label>یادداشت</label><input name="note"></div>
+      </div>
+      <h3>طرف حساب</h3><div id="chqParty"></div>
+      <div class="help">ثبت چک دریافتی، بدهی طرف را کم می‌کند؛ اگر برگشت بخورد، بدهی خودکار برمی‌گردد. چک دریافتی را می‌توانید به همکار واگذار کنید.</div>
+      <button class="btn" type="submit">✅ ثبت چک</button></form></div>
+    <div class="card"><div class="row between" style="margin-bottom:8px"><h2 style="margin:0">فهرست چک‌ها</h2><div class="row"><select id="chqFilter" style="width:auto"><option value="pending">در جریان</option><option value="all">همه</option></select><select id="chqDir" style="width:auto"><option value="">دریافتی و پرداختی</option><option value="in">دریافتی</option><option value="out">پرداختی</option></select></div></div><div class="tbl" id="chqTable"></div></div>
+  </section>
+
+  <section class="tab" id="t-save">
+    <div class="kpis" id="saveKpis"></div>
+    <div class="g2">
+      <div class="card"><h2>➕ واریز به پس‌انداز طلایی</h2>
+        <form id="saveForm"><div class="g2">
+          <div><label>مبلغ واریزی (تومان) *</label><input name="amount" inputmode="numeric" required></div>
+          <div><label>روش پرداخت</label><select name="payMethod"><option>نقد</option><option>کارتخوان</option><option>کارت به کارت</option></select></div>
+          <div><label>نرخ تبدیل</label><select name="rateMode"><option value="market">نرخ روز ۱۸ عیار</option><option value="manual">دستی</option></select></div>
+          <div><label>نرخ دستی</label><input name="rate18" inputmode="numeric"></div>
+          <div><label>کارمزد (٪، خالی = تنظیمات)</label><input name="feePct" inputmode="decimal"></div>
+        </div>
+        <h3>مشتری</h3><div id="saveParty"></div>
+        <div class="preview" id="savePreview">مبلغ را وارد کنید.</div>
+        <button class="btn" type="submit">✅ ثبت واریز</button></form></div>
+      <div class="card" data-roles="owner,accountant"><h2>➖ برداشت از پس‌انداز</h2>
+        <form id="redeemForm"><div class="g2">
+          <div><label>مشتری *</label><select name="partyCode" id="redeemParty" required></select></div>
+          <div><label>مقدار (گرم، خالی = همه)</label><input name="grams" inputmode="decimal"></div>
+          <div><label>نوع برداشت</label><select name="mode"><option value="credit">تبدیل به اعتبار خرید جنس</option><option value="cash">پرداخت نقدی</option></select></div>
+          <div><label>نرخ</label><select name="rateMode"><option value="market">نرخ روز</option><option value="manual">دستی</option></select></div>
+          <div><label>نرخ دستی</label><input name="rate18" inputmode="numeric"></div>
+          <div><label>روش پرداخت (برای نقدی)</label><select name="payMethod"><option>نقد</option><option>کارت به کارت</option></select></div>
+        </div>
+        <div class="preview" id="redeemPreview"></div>
+        <button class="btn" type="submit">✅ ثبت برداشت</button></form></div>
+    </div>
+    <div class="card"><h2>پس‌اندازکنندگان</h2><div class="tbl" id="saveTable"></div>
+      <div class="help">مشتری با هر مبلغی «گرم طلا» پس‌انداز می‌کند. هر وقت خواست، آن را به اعتبار خرید جنس تبدیل یا نقدی برداشت می‌کند. «پوشش» یعنی طلای ملکی موجود چند درصد تعهد پس‌انداز را پوشش می‌دهد.</div></div>
+  </section>
+
+  <section class="tab" id="t-ws">
+    <div class="kpis" id="wsKpis"></div>
+    <div class="card"><h2>📦 جنس امانی نزد ما (از بنکداران)</h2><div class="tbl" id="consTable"></div>
+      <div class="row" style="margin-top:8px"><button class="btn ghost" id="consReturn" type="button">↩️ برگشت تیک‌خورده‌ها به بنکدار</button></div>
+      <div class="help">جنس امانی در «خرید» با تسویه‌ی «امانی از بنکدار» ثبت می‌شود. تا وقتی فروش نرفته بدهی ندارید. با فروش، بدهی طلایی (گرم) و اجرت به حساب بنکدار می‌رود.</div></div>
+    <div class="card"><h2>🔨 حساب سازنده‌ها و کارگاه‌ها</h2><div class="tbl" id="makerTable"></div></div>
+    <div class="g2">
+      <div class="card"><h2>📤 تحویل طلا به کارگاه</h2>
+        <form id="wsIssueForm"><div><label>سازنده *</label><select name="partyCode" class="makerSel" required></select></div>
+          <label style="margin-top:8px">اقلام تحویلی (آبشده، طلای کهنه، …)</label><div class="pick" id="wsIssueList"></div>
+          <div style="margin-top:8px"><label>یادداشت</label><input name="note"></div>
+          <div class="preview" id="wsIssuePreview">اقلام را انتخاب کنید.</div>
+          <button class="btn" type="submit">📤 ثبت تحویل</button></form></div>
+      <div class="card"><h2>📥 دریافت کالای ساخته‌شده</h2>
+        <form id="wsRecvForm"><div class="g2">
+          <div style="grid-column:span 2"><label>سازنده *</label><select name="partyCode" class="makerSel" required></select></div>
+          <div><label>عنوان کالا</label><input name="title" placeholder="مثلاً النگو"></div>
+          <div><label>دسته</label><select name="category"><option>انگشتر</option><option>گردنبند</option><option>دستبند</option><option>گوشواره</option><option>سرویس</option><option>النگو</option><option>پلاک</option><option>سایر</option></select></div>
+          <div><label>وزن هر قلم (گرم) *</label><input name="weight" inputmode="decimal" required></div>
+          <div><label>عیار</label><select name="karat"><option value="750">۷۵۰</option><option value="740">۷۴۰</option><option value="705">۷۰۵</option></select></div>
+          <div><label>تعداد</label><input name="qty" value="1" inputmode="numeric"></div>
+          <div><label>اجرت ساخت هر قلم (تومان)</label><input name="makingFee" inputmode="numeric"></div>
+          <div><label>قیمت سنگ هر قلم</label><input name="stoneCost" inputmode="numeric"></div>
+          <div><label>مشخصات سنگ</label><input name="stones"></div>
+        </div><button class="btn" type="submit" style="margin-top:8px">📥 ثبت دریافت</button></form>
+        <h3>⚖️ ثبت افت ساخت</h3>
+        <form id="wsLossForm" class="row"><select name="partyCode" class="makerSel" style="max-width:220px"></select><input name="grams" inputmode="decimal" placeholder="گرم افت" style="max-width:140px"><button class="btn ghost" type="submit">ثبت افت</button></form></div>
+    </div>
+    <div class="card"><h2>اقلام در کارگاه</h2><div class="tbl" id="wsItems"></div></div>
+  </section>
+
+  <section class="tab" id="t-calc">
+    <div class="g2">
+      <div class="card"><h2>🧮 ماشین‌حساب قیمت طلا</h2>
+        <form id="calcForm"><div class="g2">
+          <div><label>وزن (گرم)</label><input name="weight" inputmode="decimal" value="1"></div>
+          <div><label>عیار</label><select name="karat"><option value="750">۷۵۰</option><option value="740">۷۴۰</option><option value="705">۷۰۵</option><option value="900">۹۰۰</option><option value="995">۹۹۵</option><option value="585">۵۸۵</option></select></div>
+          <div><label>نرخ</label><select name="rateMode"><option value="market">نرخ روز</option><option value="mazaneh">از مظنه</option><option value="ounce">از انس × دلار</option><option value="manual">دستی</option></select></div>
+          <div><label>نرخ دستی ۱۸ عیار</label><input name="rate18" inputmode="numeric"></div>
+          <div><label>نوع اجرت</label><select name="feeMode"><option value="pct">درصدی</option><option value="gram">گرمی</option></select></div>
+          <div><label>اجرت (٪ یا تومان هر گرم)</label><input name="fee" inputmode="decimal"></div>
+          <div><label>سود (٪)</label><input name="profit" inputmode="decimal"></div>
+          <div><label>سنگ (تومان)</label><input name="stone" inputmode="numeric"></div>
+          <div><label>&nbsp;</label><label class="row" style="color:var(--ink)"><input type="checkbox" name="vat" checked> مالیات ارزش افزوده</label></div>
+        </div></form>
+        <div class="preview" id="calcOut"></div></div>
+      <div class="card"><h2>💸 با این پول چند گرم؟</h2>
+        <form id="revForm"><div class="g2"><div><label>بودجه‌ی مشتری (تومان)</label><input name="budget" inputmode="numeric"></div><div><label>عیار</label><select name="karat"><option value="750">۷۵۰</option><option value="740">۷۴۰</option></select></div></div></form>
+        <div class="preview" id="revOut">اجرت و سود از فرم کنار خوانده می‌شود.</div>
+        <h2 style="margin-top:14px">🔁 تبدیل‌ها</h2>
+        <form id="convForm"><div class="g2"><div><label>وزن (گرم)</label><input name="w" inputmode="decimal" value="1"></div><div><label>از عیار</label><input name="k1" inputmode="numeric" value="740"></div><div><label>به عیار</label><input name="k2" inputmode="numeric" value="750"></div><div><label>مثقال</label><input name="mq" inputmode="decimal" placeholder="به گرم"></div></div></form>
+        <div class="preview" id="convOut"></div></div>
+    </div>
+    <div class="card muted">نرخ از انس: انس جهانی × دلار ÷ ۳۱٫۱۰۳۵ × ۰٫۷۵ (بدون حباب). نرخ از مظنه: مظنه ÷ ۴٫۳۳۱۸. اختلاف نرخ بازار با نرخ انسی = حباب طلا.</div>
+  </section>
+
+  <section class="tab" id="t-books">
+    <div class="card"><div class="row between"><h2 style="margin:0">📄 صورت سود و زیان</h2><select id="plMonth" style="width:auto"></select></div><div id="plTable" style="margin-top:8px"></div></div>
+    <div class="card"><div class="row between"><h2 style="margin:0">📒 دفتر روزنامه</h2><div class="row"><select id="jrPeriod" style="width:auto"><option value="day">امروز</option><option value="month" selected>این ماه</option><option value="prev">ماه قبل</option><option value="year">امسال</option><option value="all">همه</option></select><button class="btn ghost" id="jrXls" type="button">⬇️ اکسل دفتر روزنامه</button></div></div><div class="tbl" id="jrTable" style="margin-top:8px"></div></div>
+    <div class="card"><h2>🧾 خروجی مالیاتی (صورتحساب الکترونیکی)</h2>
+      <div class="row"><select id="taxPeriod" style="width:auto"><option value="month" selected>این ماه</option><option value="prev">ماه قبل</option><option value="year">امسال</option><option value="all">همه</option></select><button class="btn" id="taxXls" type="button">⬇️ دریافت فایل اکسل مالیاتی</button></div>
+      <div class="help">ستون‌ها مطابق الگوی «فروش طلا، جواهر و پلاتین» سامانه‌ی مودیان است: ارزش طلا، اجرت ساخت، سود فروشنده، جمع اجرت و سود، مالیات و اطلاعات خریدار. اتصال مستقیم به سامانه به گواهی امضای فروشگاه نیاز دارد. اطلاعات مالیاتی را در «تنظیمات» و کد ملی خریداران را در «حساب‌ها» کامل کنید.</div></div>
+  </section>
+
+  <section class="tab" id="t-sec">
+    <div class="g2">
+      <div class="card"><h2>👤 کاربران</h2><div class="tbl" id="userTable"></div>
+        <h3 id="userFormTitle">➕ کاربر جدید / ویرایش</h3>
+        <form id="userForm"><div class="g2">
+          <div><label>نام کاربری (انگلیسی) *</label><input name="code" dir="ltr" required></div>
+          <div><label>نام نمایشی</label><input name="name"></div>
+          <div><label>نقش</label><select name="role"><option value="seller">فروشنده (بدون دیدن سود و بها)</option><option value="accountant">حسابدار</option><option value="owner">مدیر (همه‌ی دسترسی‌ها)</option></select></div>
+          <div><label>شعبه</label><select name="branch" class="brOpts"></select></div>
+          <div><label>رمز (برای کاربر جدید الزامی)</label><input name="password" type="password" dir="ltr" autocomplete="new-password"></div>
+          <div><label>&nbsp;</label><label class="row" style="color:var(--ink)"><input type="checkbox" name="active" checked> فعال</label></div>
+        </div><button class="btn" type="submit" style="margin-top:8px">💾 ذخیره کاربر</button></form></div>
+      <div class="card"><h2>💾 پشتیبان‌گیری</h2>
+        <div class="help">هر شب ساعت ۲۳:۴۵ یک نسخه‌ی کامل در تلگرام شما و ایمیل مالک ذخیره می‌شود. هر لحظه هم می‌توانید دستی بگیرید.</div>
+        <div class="row"><button class="btn" id="bkNow" type="button">⬇️ دانلود پشتیبان کامل (JSON)</button></div>
+        <h3>♻️ بازیابی از فایل پشتیبان</h3>
+        <div class="row"><input type="file" id="bkFile" accept=".json,application/json" style="max-width:260px"><button class="btn red" id="bkRestore" type="button">بازیابی</button></div>
+        <div class="help">بازیابی ردیف‌های فایل را برمی‌گرداند یا به‌روز می‌کند و هیچ ردیف جدیدتری را پاک نمی‌کند.</div>
+        <h3>🔗 پرتال مشتری</h3>
+        <div class="help">از تب «حساب‌ها» لینک اختصاصی هر مشتری را بفرستید؛ مشتری مانده، اقساط و پس‌انداز طلایی خودش را می‌بیند (فقط‌خواندنی).</div>
+        <button class="btn red" id="portalReset" type="button">باطل‌کردن همه‌ی لینک‌های پرتال</button></div>
+    </div>
+    <div class="card"><div class="row between" style="margin-bottom:8px"><h2 style="margin:0">🕵️ گزارش فعالیت کاربران (۳۰۰ مورد آخر)</h2><input id="auditSearch" placeholder="جستجو…" style="width:160px"></div><div class="tbl" id="auditTable"></div></div>
+  </section>
+
+  <section class="tab" id="t-set">
+    <div class="g2">
+      <div class="card" data-roles="owner"><h2>🏪 اطلاعات فروشگاه</h2>
+        <form id="setForm"><div class="g2">
+          <div><label>نام فروشگاه</label><input name="shopName"></div><div><label>تلفن</label><input name="shopPhone"></div>
+          <div style="grid-column:span 2"><label>آدرس</label><input name="shopAddress"></div>
+          <div><label>ایمیل مالک (نسخه‌ی فاکتورها)</label><input name="ownerEmail" dir="ltr"></div><div><label>Chat ID تلگرام مالک (گزارش‌ها)</label><input name="ownerChatId" dir="ltr"></div>
+          <div style="grid-column:span 2"><label>لینک لوگو (اختیاری)</label><input name="logoUrl" dir="ltr"></div>
+          <div><label>درصد اجرت پیش‌فرض</label><input name="feePct" inputmode="decimal"></div><div><label>درصد سود پیش‌فرض</label><input name="profitPct" inputmode="decimal"></div>
+          <div><label>اجرت گرمی پیش‌فرض (تومان)</label><input name="feePerGram" inputmode="numeric"></div><div><label>کارمزد آبشده (تومان هر مثقال)</label><input name="abCommission" inputmode="numeric"></div>
+          <div><label>درصد مالیات ارزش افزوده</label><input name="vatPct" inputmode="decimal"></div><div><label>درصد کسر افت طلای کهنه</label><input name="buybackDeduction" inputmode="decimal"></div>
+          <div><label>کارمزد پس‌انداز طلایی (٪)</label><input name="savingsFeePct" inputmode="decimal"></div><div><label>شعبه‌ها (با ویرگول جدا کنید)</label><input name="branches" placeholder="مرکزی، شعبه ۲"></div>
+          <div><label>نوع چاپ فاکتور</label><select name="printMode"><option value="a5">A5 / A4</option><option value="thermal">حرارتی ۸ سانتی</option></select></div><div><label>اندازه‌ی لیبل (میلی‌متر)</label><select name="labelSize"><option>50x30</option><option>40x25</option><option>60x40</option><option>30x20</option></select></div>
+          <div style="grid-column:span 2"><h3>🧾 اطلاعات مالیاتی (برای خروجی سامانه مودیان)</h3></div>
+          <div><label>شناسه‌ی کالا/خدمت (۱۳ رقمی)</label><input name="taxGoodsId" dir="ltr"></div><div><label>شناسه‌ی یکتای حافظه مالیاتی</label><input name="taxMemoryId" dir="ltr"></div>
+          <div><label>کد اقتصادی فروشنده</label><input name="sellerEconomicCode" dir="ltr"></div><div><label>شناسه/کد ملی فروشنده</label><input name="sellerNationalId" dir="ltr"></div>
+          <div style="grid-column:span 2"><h3>📱 پیامک (بعداً فعال کنید)</h3><div class="help">وقتی پنل پیامک گرفتید، کلید API را این‌جا بگذارید و تیک «فعال» را بزنید. از همان لحظه فاکتور، یادآوری قسط، برگشت چک و تبریک تولد پیامک می‌شود.</div></div>
+          <div><label>سرویس‌دهنده</label><select name="smsProvider"><option value="kavenegar">کاوه‌نگار</option></select></div><div><label>شماره‌ی فرستنده</label><input name="smsSender" dir="ltr"></div>
+          <div><label>کلید API (ذخیره و پنهان می‌شود)</label><input name="smsApiKey" type="password" dir="ltr" placeholder="خالی = بدون تغییر"></div><div><label>&nbsp;</label><label class="row" style="color:var(--ink)"><input type="checkbox" name="smsEnabled"> پیامک فعال باشد</label></div>
+        </div><button class="btn" type="submit" style="margin-top:8px">💾 ذخیره تنظیمات</button></form></div>
+      <div class="card"><h2>🔑 تغییر رمز ورود</h2>
+        <div class="help" id="pwState"></div>
+        <form id="pwForm"><div class="g2"><div style="grid-column:span 2"><label>رمز فعلی</label><input name="oldPassword" type="password" dir="ltr" required></div><div><label>رمز جدید (حداقل ۶ کاراکتر)</label><input name="newPassword" type="password" dir="ltr" required></div><div><label>تکرار رمز جدید</label><input name="confirm" type="password" dir="ltr" required></div></div>
+          <button class="btn" type="submit" style="margin-top:8px">🔒 ذخیره رمز جدید</button></form>
+        <div class="help">رمز هر کاربر به‌صورت رمزنگاری‌شده (SHA-256 با نمک) ذخیره می‌شود. مدیر می‌تواند از تب «کاربران و پشتیبان» رمز بقیه را عوض کند. پس از ۵ رمز اشتباه، ورود آن کاربر ۱۵ دقیقه قفل می‌شود.</div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div id="modal"><div class="box"><div id="printArea"></div><div class="row" style="justify-content:center;margin-top:10px"><button class="btn" id="printBtn">🖨️ چاپ</button><button class="btn ghost" id="printThermal">🧾 چاپ حرارتی</button><button class="btn ghost" id="closeModal">بستن</button></div></div></div>
+<div id="toast"></div>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.6/JsBarcode.all.min.js"></script>
+<script src="https://n8n.aifardainstitute.ir/webhook/gold-admin-ext"></script>
+<script src="https://n8n.aifardainstitute.ir/webhook/gold-admin-app"></script>
+</body>
+</html>
+

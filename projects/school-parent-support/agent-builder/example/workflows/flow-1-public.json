@@ -1,0 +1,363 @@
+{
+  "name": "جریان یک - منوی عمومی",
+  "nodes": [
+    {
+      "id": "1", "name": "تریگر زمان‌بندی", "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1, "position": [180, 300],
+      "parameters": { "rule": { "interval": [{ "field": "seconds", "secondsInterval": 7 }] } }
+    },
+    {
+      "id": "2", "name": "خواندن آفست", "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2, "position": [420, 300],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT last_update_id FROM bot_offset WHERE bot_name = 'flow1'"
+      },
+      "credentials": { "postgres": { "id": "school-postgres", "name": "PostgreSQL مدرسه" } }
+    },
+    {
+      "id": "3", "name": "دریافت پیام‌های تلگرام", "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4, "position": [660, 300],
+      "parameters": {
+        "method": "GET",
+        "url": "=https://api.telegram.org/bot{{$env.TELEGRAM_BOT_TOKEN}}/getUpdates?offset={{$json.last_update_id + 1}}&timeout=5"
+      },
+      "continueOnFail": true
+    },
+    {
+      "id": "4", "name": "بررسی خطای دریافت", "type": "n8n-nodes-base.if",
+      "typeVersion": 2, "position": [900, 300],
+      "parameters": {
+        "conditions": { "options": { "caseSensitive": true }, "conditions": [
+          { "leftValue": "={{$json.error}}", "rightValue": "", "operator": { "type": "string", "operation": "notEquals" } }
+        ] }
+      }
+    },
+    {
+      "id": "5", "name": "ثبت خطای دریافت", "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2, "position": [1140, 180],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO error_log (workflow, node_name, message, chat_id) VALUES ('جریان یک - منوی عمومی', 'دریافت پیام‌های تلگرام', $1, NULL)",
+        "queryReplacement": "={{[$json.error]}}"
+      },
+      "credentials": { "postgres": { "id": "school-postgres", "name": "PostgreSQL مدرسه" } }
+    },
+    {
+      "id": "6", "name": "نرمال‌سازی متن", "type": "n8n-nodes-base.code",
+      "typeVersion": 2, "position": [1140, 420],
+      "parameters": {
+        "jsCode": "function normalizePersian(input) {\n  if (!input) return '';\n  const p = '۰۱۲۳۴۵۶۷۸۹', a = '٠١٢٣٤٥٦٧٨٩';\n  return String(input)\n    .replace(/ي/g, 'ی').replace(/ك/g, 'ک')\n    .replace(/[‌\\s]+/g, ' ')\n    .replace(/[۰-۹]/g, d => String(p.indexOf(d)))\n    .replace(/[٠-٩]/g, d => String(a.indexOf(d)))\n    .trim();\n}\nconst staticData = $getWorkflowStaticData('node');\nreturn $input.all().flatMap(item => (item.json.result || []).map(u => {\n  const msg = u.message || {};\n  const chatId = msg.chat && msg.chat.id;\n  const rawText = (msg.text || (u.callback_query && u.callback_query.data) || '').toString();\n  const awaiting = staticData['awaiting_phone_' + chatId] === true;\n  return { json: {\n    update_id: u.update_id, chat_id: chatId,\n    normalized_text: normalizePersian(rawText), awaiting_phone: awaiting\n  } };\n}));"
+      }
+    },
+    {
+      "id": "7", "name": "مسیر پیام", "type": "n8n-nodes-base.switch",
+      "typeVersion": 3, "position": [1380, 420],
+      "parameters": { "rules": { "values": [
+        { "outputKey": "منو", "conditions": { "conditions": [
+          { "leftValue": "={{$json.normalized_text}}", "rightValue": "شهریه|ثبت نام|درباره ی مدرسه|آدرس و ساعت کاری", "operator": { "type": "string", "operation": "regex" } }
+        ] } },
+        { "outputKey": "سؤال دیگر", "conditions": { "conditions": [
+          { "leftValue": "={{$json.normalized_text}}", "rightValue": "سؤال دیگر", "operator": { "type": "string", "operation": "equals" } }
+        ] } },
+        { "outputKey": "شماره تلفن", "conditions": { "conditions": [
+          { "leftValue": "={{$json.awaiting_phone}}", "rightValue": true, "operator": { "type": "boolean", "operation": "equals" } }
+        ] } }
+      ], "fallbackOutput": "extra" } }
+    },
+    {
+      "id": "8", "name": "خواندن FAQ", "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2, "position": [1640, 120],
+      "parameters": { "operation": "executeQuery", "query": "SELECT answer FROM faq WHERE menu_path = $1", "queryReplacement": "={{[$json.normalized_text]}}" },
+      "credentials": { "postgres": { "id": "school-postgres", "name": "PostgreSQL مدرسه" } }
+    },
+    {
+      "id": "9", "name": "ارسال پاسخ FAQ", "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4, "position": [1880, 120],
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.telegram.org/bot{{$env.TELEGRAM_BOT_TOKEN}}/sendMessage",
+        "sendBody": true,
+        "bodyParameters": { "parameters": [
+          { "name": "chat_id", "value": "={{$json.chat_id}}" },
+          { "name": "text", "value": "={{$json.answer}}" },
+          { "name": "reply_markup", "value": "={{JSON.stringify({inline_keyboard:[[{text:'شهریه',callback_data:'شهریه'}],[{text:'ثبت‌نام',callback_data:'ثبت نام'}],[{text:'درباره‌ی مدرسه',callback_data:'درباره ی مدرسه'}],[{text:'آدرس و ساعت کاری',callback_data:'آدرس و ساعت کاری'}],[{text:'سؤال دیگر',callback_data:'سؤال دیگر'}]]})}}" }
+        ] }
+      },
+      "continueOnFail": true
+    },
+    {
+      "id": "10", "name": "بررسی خطای ارسال FAQ", "type": "n8n-nodes-base.if",
+      "typeVersion": 2, "position": [2120, 120],
+      "parameters": { "conditions": { "conditions": [
+        { "leftValue": "={{$json.error}}", "rightValue": "", "operator": { "type": "string", "operation": "notEquals" } }
+      ] } }
+    },
+    {
+      "id": "11", "name": "ارسال پیام خطای عمومی FAQ", "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4, "position": [2360, 60],
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.telegram.org/bot{{$env.TELEGRAM_BOT_TOKEN}}/sendMessage",
+        "sendBody": true,
+        "bodyParameters": { "parameters": [
+          { "name": "chat_id", "value": "={{$json.chat_id}}" },
+          { "name": "text", "value": "متأسفانه مشکلی پیش آمد؛ لطفاً کمی بعد دوباره تلاش کنید." }
+        ] }
+      },
+      "continueOnFail": true
+    },
+    {
+      "id": "12", "name": "تنظیم پرچم انتظار شماره", "type": "n8n-nodes-base.code",
+      "typeVersion": 2, "position": [1640, 320],
+      "parameters": {
+        "jsCode": "const staticData = $getWorkflowStaticData('node');\nreturn $input.all().map(item => {\n  staticData['awaiting_phone_' + item.json.chat_id] = true;\n  return item;\n});"
+      }
+    },
+    {
+      "id": "13", "name": "درخواست شماره تلفن", "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4, "position": [1880, 320],
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.telegram.org/bot{{$env.TELEGRAM_BOT_TOKEN}}/sendMessage",
+        "sendBody": true,
+        "bodyParameters": { "parameters": [
+          { "name": "chat_id", "value": "={{$json.chat_id}}" },
+          { "name": "text", "value": "لطفاً سؤال خود و شماره تماستان را بنویسید تا دفتر مدرسه با شما تماس بگیرد." }
+        ] }
+      },
+      "continueOnFail": true
+    },
+    {
+      "id": "14", "name": "ثبت لید", "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2, "position": [1640, 480],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO leads (phone, question, source) VALUES ($1, $2, 'ربات معرفی') RETURNING id",
+        "queryReplacement": "={{[$json.normalized_text, $json.normalized_text]}}"
+      },
+      "credentials": { "postgres": { "id": "school-postgres", "name": "PostgreSQL مدرسه" } }
+    },
+    {
+      "id": "15", "name": "اطلاع به دفتر", "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4, "position": [1880, 480],
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.telegram.org/bot{{$env.TELEGRAM_BOT_TOKEN}}/sendMessage",
+        "sendBody": true,
+        "bodyParameters": { "parameters": [
+          { "name": "chat_id", "value": "={{$env.OFFICE_CHAT_ID}}" },
+          { "name": "text", "value": "=لید جدید از ربات معرفی:\n{{$json.normalized_text}}" }
+        ] }
+      },
+      "continueOnFail": true
+    },
+    {
+      "id": "16", "name": "ثبت پیام بی‌پاسخ", "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2, "position": [1640, 620],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO unanswered (chat_id, text) VALUES ($1, $2)",
+        "queryReplacement": "={{[$json.chat_id, $json.normalized_text]}}"
+      },
+      "credentials": { "postgres": { "id": "school-postgres", "name": "PostgreSQL مدرسه" } }
+    },
+    {
+      "id": "17", "name": "پاسخ پیش‌فرض", "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4, "position": [1880, 620],
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.telegram.org/bot{{$env.TELEGRAM_BOT_TOKEN}}/sendMessage",
+        "sendBody": true,
+        "bodyParameters": { "parameters": [
+          { "name": "chat_id", "value": "={{$json.chat_id}}" },
+          { "name": "text", "value": "متوجه نشدم، لطفاً از منو انتخاب کنید." }
+        ] }
+      },
+      "continueOnFail": true
+    },
+    {
+      "id": "18", "name": "به‌روزرسانی آفست", "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2, "position": [2620, 320],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE bot_offset SET last_update_id = $1 WHERE bot_name = 'flow1'",
+        "queryReplacement": "={{[Math.max($json.update_id || 0, 0)]}}"
+      },
+      "credentials": { "postgres": { "id": "school-postgres", "name": "PostgreSQL مدرسه" } }
+    },
+    {
+      "id": "19", "name": "بررسی خطای درخواست شماره", "type": "n8n-nodes-base.if",
+      "typeVersion": 2, "position": [2120, 260],
+      "parameters": { "conditions": { "conditions": [
+        { "leftValue": "={{$json.error}}", "rightValue": "", "operator": { "type": "string", "operation": "notEquals" } }
+      ] } }
+    },
+    {
+      "id": "20", "name": "ارسال پیام خطای عمومی شماره", "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4, "position": [2360, 200],
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.telegram.org/bot{{$env.TELEGRAM_BOT_TOKEN}}/sendMessage",
+        "sendBody": true,
+        "bodyParameters": { "parameters": [
+          { "name": "chat_id", "value": "={{$json.chat_id}}" },
+          { "name": "text", "value": "متأسفانه مشکلی پیش آمد؛ لطفاً کمی بعد دوباره تلاش کنید." }
+        ] }
+      },
+      "continueOnFail": true
+    },
+    {
+      "id": "21", "name": "بررسی خطای اطلاع به دفتر", "type": "n8n-nodes-base.if",
+      "typeVersion": 2, "position": [2120, 480],
+      "parameters": { "conditions": { "conditions": [
+        { "leftValue": "={{$json.error}}", "rightValue": "", "operator": { "type": "string", "operation": "notEquals" } }
+      ] } }
+    },
+    {
+      "id": "22", "name": "ثبت خطای اطلاع به دفتر", "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2, "position": [2360, 420],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO error_log (workflow, node_name, message, chat_id) VALUES ('جریان یک - منوی عمومی', 'اطلاع به دفتر', $1, $2)",
+        "queryReplacement": "={{[$json.error, $json.chat_id]}}"
+      },
+      "credentials": { "postgres": { "id": "school-postgres", "name": "PostgreSQL مدرسه" } }
+    },
+    {
+      "id": "23", "name": "بررسی خطای پاسخ پیش‌فرض", "type": "n8n-nodes-base.if",
+      "typeVersion": 2, "position": [2120, 620],
+      "parameters": { "conditions": { "conditions": [
+        { "leftValue": "={{$json.error}}", "rightValue": "", "operator": { "type": "string", "operation": "notEquals" } }
+      ] } }
+    },
+    {
+      "id": "24", "name": "ارسال پیام خطای عمومی پیش‌فرض", "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4, "position": [2360, 680],
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.telegram.org/bot{{$env.TELEGRAM_BOT_TOKEN}}/sendMessage",
+        "sendBody": true,
+        "bodyParameters": { "parameters": [
+          { "name": "chat_id", "value": "={{$json.chat_id}}" },
+          { "name": "text", "value": "متأسفانه مشکلی پیش آمد؛ لطفاً کمی بعد دوباره تلاش کنید." }
+        ] }
+      },
+      "continueOnFail": true
+    },
+    {
+      "id": "25", "name": "بررسی خطای ارسال خطای FAQ", "type": "n8n-nodes-base.if",
+      "typeVersion": 2, "position": [2600, 60],
+      "parameters": { "conditions": { "conditions": [
+        { "leftValue": "={{$json.error}}", "rightValue": "", "operator": { "type": "string", "operation": "notEquals" } }
+      ] } }
+    },
+    {
+      "id": "26", "name": "ثبت خطای ارسال خطای FAQ", "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2, "position": [2840, 20],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO error_log (workflow, node_name, message, chat_id) VALUES ('جریان یک - منوی عمومی', 'ارسال پیام خطای عمومی FAQ', $1, $2)",
+        "queryReplacement": "={{[$json.error, $json.chat_id]}}"
+      },
+      "credentials": { "postgres": { "id": "school-postgres", "name": "PostgreSQL مدرسه" } }
+    },
+    {
+      "id": "27", "name": "بررسی خطای ارسال خطای شماره", "type": "n8n-nodes-base.if",
+      "typeVersion": 2, "position": [2600, 200],
+      "parameters": { "conditions": { "conditions": [
+        { "leftValue": "={{$json.error}}", "rightValue": "", "operator": { "type": "string", "operation": "notEquals" } }
+      ] } }
+    },
+    {
+      "id": "28", "name": "ثبت خطای ارسال خطای شماره", "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2, "position": [2840, 160],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO error_log (workflow, node_name, message, chat_id) VALUES ('جریان یک - منوی عمومی', 'ارسال پیام خطای عمومی شماره', $1, $2)",
+        "queryReplacement": "={{[$json.error, $json.chat_id]}}"
+      },
+      "credentials": { "postgres": { "id": "school-postgres", "name": "PostgreSQL مدرسه" } }
+    },
+    {
+      "id": "29", "name": "بررسی خطای ارسال خطای پیش‌فرض", "type": "n8n-nodes-base.if",
+      "typeVersion": 2, "position": [2600, 680],
+      "parameters": { "conditions": { "conditions": [
+        { "leftValue": "={{$json.error}}", "rightValue": "", "operator": { "type": "string", "operation": "notEquals" } }
+      ] } }
+    },
+    {
+      "id": "30", "name": "ثبت خطای ارسال خطای پیش‌فرض", "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2, "position": [2840, 740],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "INSERT INTO error_log (workflow, node_name, message, chat_id) VALUES ('جریان یک - منوی عمومی', 'ارسال پیام خطای عمومی پیش‌فرض', $1, $2)",
+        "queryReplacement": "={{[$json.error, $json.chat_id]}}"
+      },
+      "credentials": { "postgres": { "id": "school-postgres", "name": "PostgreSQL مدرسه" } }
+    }
+  ],
+  "connections": {
+    "تریگر زمان‌بندی": { "main": [[{ "node": "خواندن آفست", "type": "main", "index": 0 }]] },
+    "خواندن آفست": { "main": [[{ "node": "دریافت پیام‌های تلگرام", "type": "main", "index": 0 }]] },
+    "دریافت پیام‌های تلگرام": { "main": [[{ "node": "بررسی خطای دریافت", "type": "main", "index": 0 }]] },
+    "بررسی خطای دریافت": { "main": [
+      [{ "node": "ثبت خطای دریافت", "type": "main", "index": 0 }],
+      [{ "node": "نرمال‌سازی متن", "type": "main", "index": 0 }]
+    ] },
+    "نرمال‌سازی متن": { "main": [[{ "node": "مسیر پیام", "type": "main", "index": 0 }]] },
+    "مسیر پیام": { "main": [
+      [{ "node": "خواندن FAQ", "type": "main", "index": 0 }],
+      [{ "node": "تنظیم پرچم انتظار شماره", "type": "main", "index": 0 }],
+      [{ "node": "ثبت لید", "type": "main", "index": 0 }],
+      [{ "node": "ثبت پیام بی‌پاسخ", "type": "main", "index": 0 }]
+    ] },
+    "خواندن FAQ": { "main": [[{ "node": "ارسال پاسخ FAQ", "type": "main", "index": 0 }]] },
+    "ارسال پاسخ FAQ": { "main": [[{ "node": "بررسی خطای ارسال FAQ", "type": "main", "index": 0 }]] },
+    "بررسی خطای ارسال FAQ": { "main": [
+      [{ "node": "ارسال پیام خطای عمومی FAQ", "type": "main", "index": 0 }],
+      [{ "node": "به‌روزرسانی آفست", "type": "main", "index": 0 }]
+    ] },
+    "ارسال پیام خطای عمومی FAQ": { "main": [[{ "node": "بررسی خطای ارسال خطای FAQ", "type": "main", "index": 0 }]] },
+    "بررسی خطای ارسال خطای FAQ": { "main": [
+      [{ "node": "ثبت خطای ارسال خطای FAQ", "type": "main", "index": 0 }],
+      [{ "node": "به‌روزرسانی آفست", "type": "main", "index": 0 }]
+    ] },
+    "ثبت خطای ارسال خطای FAQ": { "main": [[{ "node": "به‌روزرسانی آفست", "type": "main", "index": 0 }]] },
+    "تنظیم پرچم انتظار شماره": { "main": [[{ "node": "درخواست شماره تلفن", "type": "main", "index": 0 }]] },
+    "درخواست شماره تلفن": { "main": [[{ "node": "بررسی خطای درخواست شماره", "type": "main", "index": 0 }]] },
+    "بررسی خطای درخواست شماره": { "main": [
+      [{ "node": "ارسال پیام خطای عمومی شماره", "type": "main", "index": 0 }],
+      [{ "node": "به‌روزرسانی آفست", "type": "main", "index": 0 }]
+    ] },
+    "ارسال پیام خطای عمومی شماره": { "main": [[{ "node": "بررسی خطای ارسال خطای شماره", "type": "main", "index": 0 }]] },
+    "بررسی خطای ارسال خطای شماره": { "main": [
+      [{ "node": "ثبت خطای ارسال خطای شماره", "type": "main", "index": 0 }],
+      [{ "node": "به‌روزرسانی آفست", "type": "main", "index": 0 }]
+    ] },
+    "ثبت خطای ارسال خطای شماره": { "main": [[{ "node": "به‌روزرسانی آفست", "type": "main", "index": 0 }]] },
+    "ثبت لید": { "main": [[{ "node": "اطلاع به دفتر", "type": "main", "index": 0 }]] },
+    "اطلاع به دفتر": { "main": [[{ "node": "بررسی خطای اطلاع به دفتر", "type": "main", "index": 0 }]] },
+    "بررسی خطای اطلاع به دفتر": { "main": [
+      [{ "node": "ثبت خطای اطلاع به دفتر", "type": "main", "index": 0 }],
+      [{ "node": "به‌روزرسانی آفست", "type": "main", "index": 0 }]
+    ] },
+    "ثبت خطای اطلاع به دفتر": { "main": [[{ "node": "به‌روزرسانی آفست", "type": "main", "index": 0 }]] },
+    "ثبت پیام بی‌پاسخ": { "main": [[{ "node": "پاسخ پیش‌فرض", "type": "main", "index": 0 }]] },
+    "پاسخ پیش‌فرض": { "main": [[{ "node": "بررسی خطای پاسخ پیش‌فرض", "type": "main", "index": 0 }]] },
+    "بررسی خطای پاسخ پیش‌فرض": { "main": [
+      [{ "node": "ارسال پیام خطای عمومی پیش‌فرض", "type": "main", "index": 0 }],
+      [{ "node": "به‌روزرسانی آفست", "type": "main", "index": 0 }]
+    ] },
+    "ارسال پیام خطای عمومی پیش‌فرض": { "main": [[{ "node": "بررسی خطای ارسال خطای پیش‌فرض", "type": "main", "index": 0 }]] },
+    "بررسی خطای ارسال خطای پیش‌فرض": { "main": [
+      [{ "node": "ثبت خطای ارسال خطای پیش‌فرض", "type": "main", "index": 0 }],
+      [{ "node": "به‌روزرسانی آفست", "type": "main", "index": 0 }]
+    ] },
+    "ثبت خطای ارسال خطای پیش‌فرض": { "main": [[{ "node": "به‌روزرسانی آفست", "type": "main", "index": 0 }]] }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "errorWorkflow": "flow-0-error-handler"
+  }
+}

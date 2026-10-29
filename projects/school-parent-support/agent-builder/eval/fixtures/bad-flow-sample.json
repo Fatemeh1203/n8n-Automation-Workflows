@@ -1,0 +1,11 @@
+{
+  "name": "test-fixture-bad",
+  "nodes": [
+    {"id": "1", "name": "Schedule Trigger", "type": "n8n-nodes-base.scheduleTrigger", "parameters": {}},
+    {"id": "2", "name": "Get Updates", "type": "n8n-nodes-base.httpRequest", "parameters": {"url": "https://api.telegram.org/bot{{$env.TELEGRAM_BOT_TOKEN}}/getUpdates"}},
+    {"id": "3", "name": "Insert Ticket", "type": "n8n-nodes-base.postgres", "parameters": {"query": "INSERT INTO tickets (student_id, category, body) VALUES ($1, $2, $3)"}},
+    {"id": "4", "name": "Send Error To User", "type": "n8n-nodes-base.httpRequest", "parameters": {"url": "https://api.telegram.org/bot{{$env.TELEGRAM_BOT_TOKEN}}/sendMessage", "body": {"text": "Something went wrong: {{$json.error.message}}"}}}
+  ],
+  "connections": {},
+  "settings": {}
+}

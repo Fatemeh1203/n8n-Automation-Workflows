@@ -1,0 +1,27 @@
+{
+  "name": "اطلاعیه پنل به پایه/کلاس",
+  "meta": {
+    "description": "جریان ۲: دریافت اطلاعیه از پنل مدرسه از طریق وب‌هوک و ارسال آن به اولیای تأییدشدهٔ یک پایه یا کلاس مشخص."
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "nodes": [
+    {"id":"52061dee-8b3b-41ae-884d-c6334af27b1a","name":"دریافت اطلاعیه از پنل مدرسه","type":"n8n-nodes-base.webhook","typeVersion":2.1,"position":[0,300],"parameters":{"httpMethod":"POST","path":"school-panel/announcement","responseMode":"responseNode","options":{}}},
+    {"id":"d8207949-cf27-48fd-871a-1f4e7c3f9a70","name":"نرمال‌سازی ورودی اطلاعیه","type":"n8n-nodes-base.code","typeVersion":2,"position":[220,300],"parameters":{"mode":"runOnceForAllItems","language":"javaScript","jsCode":"function normalizeFa(s) {\n  if (s === undefined || s === null) return '';\n  let t = String(s);\n  t = t.replace(/\\u064A/g, '\\u06CC').replace(/\\u0643/g, '\\u06A9');\n  t = t.replace(/[\\u200C\\u200B]/g, ' ');\n  t = t.replace(/\\s+/g, ' ').trim();\n  return t;\n}\nconst b = ($input.first().json.body) || $input.first().json;\nconst grade = normalizeFa(b.grade || '');\nconst klass = normalizeFa(b.class || '');\nconst message = (b.message || '').toString().trim();\nreturn [{ json: { grade: grade, class: klass, message: message, valid: !!(grade && message) } }];"}},
+    {"id":"6300725b-628d-4af7-a3cb-793698686da6","name":"ورودی معتبر است؟","type":"n8n-nodes-base.if","typeVersion":2.3,"position":[440,300],"parameters":{"conditions":{"options":{"caseSensitive":true,"leftValue":"","typeValidation":"strict"},"conditions":[{"leftValue":"={{ $json.valid }}","operator":{"type":"boolean","operation":"true"},"rightValue":""}],"combinator":"and"}}},
+    {"id":"a3006308-f435-4322-8b29-6fc188ab894a","name":"یافتن اولیای تأییدشده پایه/کلاس","type":"n8n-nodes-base.postgres","typeVersion":2.7,"position":[660,200],"parameters":{"resource":"database","operation":"executeQuery","query":"SELECT DISTINCT p.chat_id AS chat_id FROM parents p JOIN students st ON st.id = p.student_id WHERE p.verified_at IS NOT NULL AND st.grade = $1 AND ($2 = '' OR st.class = $2);","options":{"queryReplacement":"={{ [ $json.grade, $json.class ] }}"}},"credentials":{"postgres":{"id":"__SET_ME__","name":"دیتابیس داخلی مدرسه"}}},
+    {"id":"c8ca2f2b-e45f-4734-a447-9248cf9dcdda","name":"پاسخ موفقیت به پنل","type":"n8n-nodes-base.respondToWebhook","typeVersion":1.5,"position":[1100,320],"parameters":{"respondWith":"json","responseBody":"={{ { ok: true, recipients: $('یافتن اولیای تأییدشده پایه/کلاس').all().length } }}","options":{"responseCode":200}}},
+    {"id":"962e9603-6b80-4866-be61-53a9e5c5ed13","name":"ارسال اطلاعیه به ولی","type":"n8n-nodes-base.telegram","typeVersion":1.2,"position":[1100,120],"parameters":{"resource":"message","operation":"sendMessage","chatId":"={{ $json.chat_id }}","text":"={{ '📢 اطلاعیه مدرسه\\n' + $('نرمال‌سازی ورودی اطلاعیه').first().json.message }}","additionalFields":{"appendAttribution":false}},"credentials":{"telegramApi":{"id":"__SET_ME__","name":"ربات تلگرام مدرسه"}}},
+    {"id":"d0ef0156-fdf8-4015-b42e-8bcc96d6bb6a","name":"حلقه ارسال به اولیا","type":"n8n-nodes-base.splitInBatches","typeVersion":3,"position":[880,200],"parameters":{"batchSize":1}},
+    {"id":"6d0547bb-1193-4a4b-af15-b4203cb2774a","name":"پاسخ خطا به پنل","type":"n8n-nodes-base.respondToWebhook","typeVersion":1.5,"position":[660,460],"parameters":{"respondWith":"json","responseBody":"={{ { \"ok\": false, \"error\": \"پایه یا متن اطلاعیه ارسال نشده است.\" } }}","options":{"responseCode":400}}}
+  ],
+  "connections": {
+    "دریافت اطلاعیه از پنل مدرسه":{"main":[[{"node":"نرمال‌سازی ورودی اطلاعیه","type":"main","index":0}]]},
+    "نرمال‌سازی ورودی اطلاعیه":{"main":[[{"node":"ورودی معتبر است؟","type":"main","index":0}]]},
+    "ورودی معتبر است؟":{"main":[[{"node":"یافتن اولیای تأییدشده پایه/کلاس","type":"main","index":0}],[{"node":"پاسخ خطا به پنل","type":"main","index":0}]]},
+    "یافتن اولیای تأییدشده پایه/کلاس":{"main":[[{"node":"حلقه ارسال به اولیا","type":"main","index":0}]]},
+    "ارسال اطلاعیه به ولی":{"main":[[{"node":"حلقه ارسال به اولیا","type":"main","index":0}]]},
+    "حلقه ارسال به اولیا":{"main":[[{"node":"پاسخ موفقیت به پنل","type":"main","index":0}],[{"node":"ارسال اطلاعیه به ولی","type":"main","index":0}]]}
+  }
+}
