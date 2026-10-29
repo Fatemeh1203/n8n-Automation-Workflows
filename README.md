@@ -21,6 +21,10 @@
 
 هر پوشه README خودش را دارد، با راهنمای نصب و راه‌اندازی.
 
+## ویترین تعاملی
+
+در [استودیو اتوماسیون](https://fatemeh1203.github.io/n8n-Automation-Workflows/) هر پروژه یک شبیه‌ساز در مرورگر دارد: ورودی را تغییر می‌دهید، اجرا می‌کنید و خروجی هر نود را مرحله‌به‌مرحله می‌بینید.
+
 ## دموی زنده‌ی طلافروشی
 
 - سایت طلافروشی (قیمت لحظه‌ای، صدور فاکتور و ورود به پنل): https://n8n.aifardainstitute.ir/webhook/gold-shop
@@ -32,7 +36,8 @@
 ## ساختار مخزن
 
 - `projects/` همه‌ی پروژه‌ها، هر کدام در پوشه‌ی خودش.
-- `index.html` و `docs/` صفحه‌ی «ثبت روزانه»‌ی آموزشگاه فردا هستند که روی GitHub Pages منتشر می‌شود. به پروژه‌های بالا ربطی ندارند.
+- `index.html` و `docs/` صفحه‌ی «ثبت روزانه»‌ی آموزشگاه فردا هستند و به پروژه‌های بالا ربطی ندارند.
+- سایت ویترین از شاخه‌ی `claude/Automation-Studio-website-22t2zg` روی GitHub Pages منتشر می‌شود؛ آن شاخه را پاک نکنید.
 
 </div>
 
@@ -59,6 +64,10 @@ By **Fatemeh Shams** · [LinkedIn](https://www.linkedin.com/in/fatemeh-shams/) �
 
 Each folder has its own README with setup instructions.
 
+## Interactive showcase
+
+In [Automation Studio](https://fatemeh1203.github.io/n8n-Automation-Workflows/) every project has an in-browser simulator: change the inputs, press run, and watch each node's output step by step.
+
 ## Gold shop live demo
 
 - Gold shop site (live prices, invoicing and admin login): https://n8n.aifardainstitute.ir/webhook/gold-shop
@@ -70,4 +79,5 @@ For the higher-level projects, some workflow files are kept private; only the do
 ## Repository layout
 
 - `projects/` holds every project in its own folder.
-- `index.html` and `docs/` are the Amozeshgah Farda daily-log page published on GitHub Pages. They're unrelated to the projects above.
+- `index.html` and `docs/` are the Amozeshgah Farda daily-log page and are unrelated to the projects above.
+- The showcase site is published to GitHub Pages from the `claude/Automation-Studio-website-22t2zg` branch, so don't delete that branch.
