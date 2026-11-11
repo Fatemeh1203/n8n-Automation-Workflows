@@ -12,7 +12,7 @@
 |---|---|---|
 | طلافروشی، سطح ۱ | ربات تلگرام قیمت لحظه‌ای طلا، سکه و دلار، با هشدار قیمت که هر ۱۰ دقیقه چک می‌شود | [level1-live-gold-price-bot](projects/goldsmith/level1-live-gold-price-bot) |
 | طلافروشی، سطح ۲ | فرم وب صدور فاکتور: وزن، عیار و اجرت را می‌گیرد، با نرخ زنده حساب می‌کند، فاکتور می‌دهد و در گوگل‌شیت بایگانی می‌کند | [level2-invoice-and-fee-assistant](projects/goldsmith/level2-invoice-and-fee-assistant) |
-| طلافروشی، سطح ۳ | سیستم مدیریت طلافروشی: موجودی، خرید و فروش، مشتریان، چک، پس‌انداز طلایی، کارگاه، چند کاربر و پشتیبان‌گیری | [level3-gold-shop-management](projects/goldsmith/level3-gold-shop-management) |
+| طلافروشی، سطح ۳ | سیستم مدیریت طلافروشی: موجودی، خرید و فروش، مشتریان، چک، پس‌انداز طلایی، کارگاه، چند کاربر و پشتیبان‌گیری؛ نسخه‌ی ۵: پنل خلوت با منوی کناری، تبدیل فاکتور سایت به فروش و چند مغازه با اطلاعات جدا | [level3-gold-shop-management](projects/goldsmith/level3-gold-shop-management) |
 | طلافروشی، امکانات تکمیلی | شمش، اسکن بارکد، انبارگردانی، پیش‌فاکتور با قیمت قفل، رزرو، تابلوی قیمت، سریال سکه و پرداخت اقساط با زرین‌پال | [level3-extensions](projects/goldsmith/level3-extensions) |
 | اسکن فاکتور با هوش مصنوعی | عکس یا فایل فاکتور را در تلگرام می‌فرستید؛ مدل بینایی داده‌ها را استخراج می‌کند و در تب خرید یا فروش گوگل‌شیت ثبت می‌کند، با محاسبه‌ی ارزش‌افزوده | [invoice-ocr](projects/invoice-ocr) |
 | دستیار گزارش روزانه و وظایف | صبح کارهای باز را یادآوری می‌کند، عصر گزارش روزانه را می‌گیرد، در گوگل‌شیت آرشیو می‌کند و اول هر ماه گزارش عملکرد می‌دهد | [daily-report-assistant](projects/daily-report-assistant) |
@@ -55,7 +55,7 @@ By **Fatemeh Shams** · [LinkedIn](https://www.linkedin.com/in/fatemeh-shams/) �
 |---|---|---|
 | Gold shop, level 1 | Telegram bot for live gold, coin and dollar prices, with price alerts checked every 10 minutes | [level1-live-gold-price-bot](projects/goldsmith/level1-live-gold-price-bot) |
 | Gold shop, level 2 | Web invoice form: takes weight, karat and making fee, calculates from the live rate, issues the invoice and archives it in Google Sheets | [level2-invoice-and-fee-assistant](projects/goldsmith/level2-invoice-and-fee-assistant) |
-| Gold shop, level 3 | Gold shop management system: inventory, buying and selling, customers, cheques, gold savings, workshop, multiple users and backups | [level3-gold-shop-management](projects/goldsmith/level3-gold-shop-management) |
+| Gold shop, level 3 | Gold shop management system: inventory, buying and selling, customers, cheques, gold savings, workshop, multiple users and backups; v5 adds a cleaner side-menu panel, website invoice → sale, and multiple shops with separate data | [level3-gold-shop-management](projects/goldsmith/level3-gold-shop-management) |
 | Gold shop, extensions | Bullion, barcode scanning, stocktaking, price-locked pro-forma invoices, reservations, a shop price board, coin serials and ZarinPal instalment payments | [level3-extensions](projects/goldsmith/level3-extensions) |
 | AI invoice scanning | Send an invoice photo or file on Telegram; a vision model extracts the data and logs it to the purchase or sales tab in Google Sheets, with VAT calculated | [invoice-ocr](projects/invoice-ocr) |
 | Daily report & task assistant | Sends open tasks in the morning, asks for a daily report in the evening, archives it in Google Sheets and sends a performance report on the 1st of each month | [daily-report-assistant](projects/daily-report-assistant) |
